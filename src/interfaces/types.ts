@@ -242,9 +242,21 @@ export const DEFAULT_CONFIG: SimulationConfig = {
 export const PRESET_SCENARIOS: PresetScenario[] = [
   {
     name: 'Black Friday Spike',
-    description: 'Simulating a 10x traffic spike lasting 60 seconds with 30s pod startup',
+    description: 'Simulating a 10x traffic spike lasting 60 seconds with aggressive scaling',
     config: {
       name: 'Black Friday Spike',
+      scaling: {
+        ...DEFAULT_SCALING,
+        min_replicas: 3,
+        max_replicas: 100,
+        scale_up_threshold: 60,
+        scale_up_step: 3,
+        startup_time: 30,
+      },
+      advanced: {
+        ...DEFAULT_ADVANCED,
+        cooldown_scale_up: 30,
+      },
       traffic: {
         pattern: 'spike',
         params: { base_rps: 200, spike_rps: 2000, spike_start: 120, spike_duration: 60 } as SpikeParams,
@@ -256,6 +268,13 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
     description: 'Traffic linearly increases from morning to peak, simulating a typical workday',
     config: {
       name: 'Gradual Daily Ramp',
+      scaling: {
+        ...DEFAULT_SCALING,
+        min_replicas: 2,
+        max_replicas: 30,
+        scale_up_threshold: 75,
+        capacity_per_replica: 150,
+      },
       traffic: {
         pattern: 'gradual',
         params: { start_rps: 50, end_rps: 800, duration: 600 } as GradualParams,
@@ -267,6 +286,13 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
     description: 'Oscillating traffic with random pod failures simulating shared infrastructure',
     config: {
       name: 'Noisy Neighbor',
+      scaling: {
+        ...DEFAULT_SCALING,
+        min_replicas: 3,
+        max_replicas: 40,
+        scale_up_threshold: 65,
+        startup_time: 45,
+      },
       traffic: {
         pattern: 'wave',
         params: { base_rps: 300, amplitude: 200, period: 120 } as WaveParams,
@@ -282,6 +308,13 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
     description: 'Constant traffic to validate baseline scaling config',
     config: {
       name: 'Steady State',
+      scaling: {
+        ...DEFAULT_SCALING,
+        min_replicas: 5,
+        max_replicas: 15,
+        scale_up_threshold: 80,
+        capacity_per_replica: 100,
+      },
       traffic: {
         pattern: 'steady',
         params: { rps: 500 } as SteadyParams,
@@ -293,6 +326,17 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
     description: 'Traffic increases in discrete steps, simulating a phased rollout',
     config: {
       name: 'Step Migration',
+      scaling: {
+        ...DEFAULT_SCALING,
+        min_replicas: 2,
+        max_replicas: 80,
+        scale_up_step: 2,
+        scale_down_step: 1,
+      },
+      simulation: {
+        ...DEFAULT_SIMULATION,
+        duration: 600,
+      },
       traffic: {
         pattern: 'step',
         params: {

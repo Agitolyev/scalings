@@ -86,6 +86,19 @@ class App {
                     speedValue.textContent = `${speed}x`;
             });
         }
+        // Traffic toggle
+        const trafficToggle = document.getElementById('traffic-toggle');
+        const trafficContent = document.getElementById('traffic-content');
+        if (trafficToggle && trafficContent) {
+            trafficToggle.addEventListener('click', () => {
+                trafficContent.classList.toggle('collapsed');
+                trafficToggle.classList.toggle('expanded');
+                const arrow = trafficToggle.querySelector('.toggle-arrow');
+                if (arrow) {
+                    arrow.textContent = trafficContent.classList.contains('collapsed') ? '\u25B6' : '\u25BC';
+                }
+            });
+        }
         // Docs toggle
         const docsToggle = document.getElementById('docs-toggle');
         const docsContent = document.getElementById('docs-content');

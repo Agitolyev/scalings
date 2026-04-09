@@ -81,6 +81,17 @@ body {
   padding: 0 1.5rem;
 }
 
+.config-params-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.config-params-row > section {
+  flex: 1;
+  min-width: 0;
+}
+
 /* --- Header --- */
 header {
   display: flex;
@@ -992,6 +1003,10 @@ section {
 
   .container {
     padding: 0 1rem;
+  }
+
+  .config-params-row {
+    flex-direction: column;
   }
 
   .sim-controls-row {
