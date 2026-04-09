@@ -111,38 +111,14 @@
       </section>
     </div>
 
-    <!-- SIMULATION CONTROLS -->
-    <section id="sim-controls" class="card">
-      <div class="sim-controls-row">
-        <div class="control-group">
-          <label for="sim-duration" title="Total simulation duration in seconds">Duration:</label>
-          <input type="number" id="sim-duration" min="10" max="86400" value="600" aria-label="Simulation duration in seconds" title="Total time to simulate">
-          <span class="unit" style="color:var(--text-muted);font-size:0.8rem">s</span>
-        </div>
-        <div class="control-group">
-          <label for="sim-tick" title="Granularity of the simulation">Tick Interval:</label>
-          <input type="number" id="sim-tick" min="1" max="60" value="1" aria-label="Tick interval in seconds" title="Simulation granularity in seconds">
-          <span class="unit" style="color:var(--text-muted);font-size:0.8rem">s</span>
-        </div>
-        <div class="control-group">
-          <label for="playback-speed" title="Animation playback speed">Speed:</label>
-          <input type="range" id="playback-speed" class="neon-slider" min="1" max="50" value="5" style="max-width:120px" aria-label="Playback speed multiplier" title="Controls animation speed of the output chart">
-          <span id="playback-speed-value" class="speed-value">5x</span>
-        </div>
-        <button id="btn-simulate" class="btn btn-primary" aria-label="Run the autoscaling simulation" title="Run the simulation with current parameters">Simulate</button>
-        <label class="compare-toggle">
-          <input type="checkbox" id="compare-mode" aria-label="Enable compare mode" title="Compare this run against the previous one">
-          Compare
-        </label>
-      </div>
-      <div class="progress-bar"><div id="sim-progress" class="progress-fill"></div></div>
-    </section>
-
     <!-- TRAFFIC PATTERN -->
     <section id="traffic-section" class="card lime-border">
-      <button id="traffic-toggle" class="toggle-btn" aria-label="Toggle traffic pattern">
+      <button id="traffic-toggle" class="toggle-btn toggle-btn-with-preview" aria-label="Toggle traffic pattern">
         <span class="toggle-arrow">&#9654;</span> Traffic Pattern
       </button>
+      <div class="traffic-preview">
+        <canvas id="traffic-preview-canvas"></canvas>
+      </div>
       <div id="traffic-content" class="collapsible-content collapsed">
 
       <div class="pattern-selector">
@@ -261,10 +237,34 @@
         </div>
       </div>
 
-      <div class="traffic-preview">
-        <canvas id="traffic-preview-canvas"></canvas>
       </div>
+    </section>
+
+    <!-- SIMULATION CONTROLS -->
+    <section id="sim-controls" class="card">
+      <div class="sim-controls-row">
+        <div class="control-group">
+          <label for="sim-duration" title="Total simulation duration in seconds">Duration:</label>
+          <input type="number" id="sim-duration" min="10" max="86400" value="600" aria-label="Simulation duration in seconds" title="Total time to simulate">
+          <span class="unit" style="color:var(--text-muted);font-size:0.8rem">s</span>
+        </div>
+        <div class="control-group">
+          <label for="sim-tick" title="Granularity of the simulation">Tick Interval:</label>
+          <input type="number" id="sim-tick" min="1" max="60" value="1" aria-label="Tick interval in seconds" title="Simulation granularity in seconds">
+          <span class="unit" style="color:var(--text-muted);font-size:0.8rem">s</span>
+        </div>
+        <div class="control-group">
+          <label for="playback-speed" title="Animation playback speed">Speed:</label>
+          <input type="range" id="playback-speed" class="neon-slider" min="1" max="50" value="5" style="max-width:120px" aria-label="Playback speed multiplier" title="Controls animation speed of the output chart">
+          <span id="playback-speed-value" class="speed-value">5x</span>
+        </div>
+        <button id="btn-simulate" class="btn btn-primary" aria-label="Run the autoscaling simulation" title="Run the simulation with current parameters">Simulate</button>
+        <label class="compare-toggle">
+          <input type="checkbox" id="compare-mode" aria-label="Enable compare mode" title="Compare this run against the previous one">
+          Compare
+        </label>
       </div>
+      <div class="progress-bar"><div id="sim-progress" class="progress-fill"></div></div>
     </section>
 
     <!-- ADVANCED PARAMETERS -->

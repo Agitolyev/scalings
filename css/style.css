@@ -542,10 +542,22 @@ button:active, .btn:active {
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
-  padding: 0.75rem;
-  margin-top: 1rem;
-  height: 200px;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  height: 80px;
   position: relative;
+  cursor: pointer;
+  transition: height 0.3s ease;
+}
+
+.traffic-preview:hover {
+  border-color: var(--cyan-dim);
+}
+
+.traffic-preview.expanded {
+  height: 180px;
+  margin-top: 0.75rem;
+  cursor: default;
 }
 
 .traffic-preview canvas {
