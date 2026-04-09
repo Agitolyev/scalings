@@ -31,7 +31,7 @@ The config parameter is a base64-encoded JSON object matching the SimulationConf
   "advanced": {
     "metric_observation_delay": 15, "cooldown_scale_up": 60,
     "cooldown_scale_down": 300, "node_provisioning_time": 120,
-    "cluster_node_capacity": 20, "pod_failure_rate": 0,
+    "cluster_node_capacity": 20, "pods_per_node": 10, "pod_failure_rate": 0,
     "graceful_shutdown_time": 10, "cost_per_replica_hour": 0.05
   },
   "traffic": {
@@ -43,7 +43,7 @@ The config parameter is a base64-encoded JSON object matching the SimulationConf
 
 ## Traffic patterns available
 - steady: Constant RPS (params: rps)
-- gradual: Linear ramp (params: start_rps, end_rps, duration)
+- gradual: Linear ramp (params: start_rps, end_rps)
 - spike: Sudden jump (params: base_rps, spike_rps, spike_start, spike_duration)
 - wave: Sinusoidal oscillation (params: base_rps, amplitude, period)
 - step: Discrete steps (params: steps[{rps, duration}])

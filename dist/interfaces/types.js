@@ -18,6 +18,7 @@ export const DEFAULT_ADVANCED = {
     cooldown_scale_down: 300,
     node_provisioning_time: 120,
     cluster_node_capacity: 20,
+    pods_per_node: 10,
     pod_failure_rate: 0,
     graceful_shutdown_time: 10,
     cost_per_replica_hour: 0.05,
@@ -82,7 +83,7 @@ export const PRESET_SCENARIOS = [
             },
             traffic: {
                 pattern: 'gradual',
-                params: { start_rps: 50, end_rps: 800, duration: 600 },
+                params: { start_rps: 50, end_rps: 800 },
             },
         },
     },
@@ -104,7 +105,7 @@ export const PRESET_SCENARIOS = [
             },
             advanced: {
                 ...DEFAULT_ADVANCED,
-                pod_failure_rate: 0.005,
+                pod_failure_rate: 0.5,
             },
         },
     },

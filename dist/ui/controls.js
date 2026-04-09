@@ -53,6 +53,7 @@ export class UIControls {
                 cooldown_scale_down: this.getNumericValue('param-cooldown_scale_down', DEFAULT_CONFIG.advanced.cooldown_scale_down),
                 node_provisioning_time: this.getNumericValue('param-node_provisioning_time', DEFAULT_CONFIG.advanced.node_provisioning_time),
                 cluster_node_capacity: this.getNumericValue('param-cluster_node_capacity', DEFAULT_CONFIG.advanced.cluster_node_capacity),
+                pods_per_node: this.getNumericValue('param-pods_per_node', DEFAULT_CONFIG.advanced.pods_per_node),
                 pod_failure_rate: this.getNumericValue('param-pod_failure_rate', DEFAULT_CONFIG.advanced.pod_failure_rate),
                 graceful_shutdown_time: this.getNumericValue('param-graceful_shutdown_time', DEFAULT_CONFIG.advanced.graceful_shutdown_time),
                 cost_per_replica_hour: this.getNumericValue('param-cost_per_replica_hour', DEFAULT_CONFIG.advanced.cost_per_replica_hour),
@@ -83,6 +84,7 @@ export class UIControls {
         this.setNumericValue('param-cooldown_scale_down', config.advanced.cooldown_scale_down);
         this.setNumericValue('param-node_provisioning_time', config.advanced.node_provisioning_time);
         this.setNumericValue('param-cluster_node_capacity', config.advanced.cluster_node_capacity);
+        this.setNumericValue('param-pods_per_node', config.advanced.pods_per_node);
         this.setNumericValue('param-pod_failure_rate', config.advanced.pod_failure_rate);
         this.setNumericValue('param-graceful_shutdown_time', config.advanced.graceful_shutdown_time);
         this.setNumericValue('param-cost_per_replica_hour', config.advanced.cost_per_replica_hour);
@@ -99,7 +101,6 @@ export class UIControls {
                 params = {
                     start_rps: this.getNumericValue('traffic-gradual-start_rps', 50),
                     end_rps: this.getNumericValue('traffic-gradual-end_rps', 800),
-                    duration: this.getNumericValue('traffic-gradual-duration', 600),
                 };
                 break;
             case 'spike':
@@ -140,7 +141,6 @@ export class UIControls {
                 const p = traffic.params;
                 this.setNumericValue('traffic-gradual-start_rps', p.start_rps);
                 this.setNumericValue('traffic-gradual-end_rps', p.end_rps);
-                this.setNumericValue('traffic-gradual-duration', p.duration);
                 break;
             }
             case 'spike': {
