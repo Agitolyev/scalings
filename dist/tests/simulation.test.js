@@ -196,9 +196,11 @@ describe('SimulationService — snapshot consistency', () => {
             },
         });
         const result = await svc.run(config);
-        for (const snap of result.snapshots) {
-            if (snap.scale_event === 'down') {
-                assert.ok(snap.shutting_down_pods > 0, `t=${snap.time}: scale-down event but shutting_down_pods is ${snap.shutting_down_pods}`);
+        for (let i = 0; i < result.snapshots.length; i++) {
+            const snap = result.snapshots[i];
+            if (snap.scale_event === 'down' && i > 0) {
+                const prev = result.snapshots[i - 1];
+                assert.ok(snap.running_pods < prev.running_pods, `t=${snap.time}: scale-down event but running_pods (${snap.running_pods}) did not decrease from previous tick (${prev.running_pods})`);
             }
         }
     });
