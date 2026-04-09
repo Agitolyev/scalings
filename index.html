@@ -465,6 +465,16 @@
         <h3>What is scalings.xyz?</h3>
         <p>scalings.xyz is an interactive, fully client-side autoscaling simulator. It lets engineers configure autoscaling parameters, select a traffic pattern, and run a discrete-time simulation to visualize whether their scaling policy can handle the load.</p>
 
+        <h3>When to use it</h3>
+        <ul>
+          <li><strong>Prioritize optimizations</strong> — Is it worth cutting pod startup time from 30s to 10s? Would faster metric delivery help more? Or is simply overprovisioning cheaper? Change one parameter, compare runs, and see exactly how many dropped requests each option saves you.</li>
+          <li><strong>Set optimization targets</strong> — Don't guess what your startup time or cooldown "should" be. Simulate a range of values against your actual traffic pattern and pick the one that balances cost vs. reliability.</li>
+          <li><strong>Validate before deploying</strong> — Test a new HPA config, ASG policy, or MIG setup against realistic traffic patterns before it hits production.</li>
+          <li><strong>Post-incident analysis</strong> — Replay a traffic spike that caused an outage. Tweak the scaling config until the sim shows zero drops, then export the fix.</li>
+          <li><strong>Capacity planning</strong> — Model upcoming events (product launches, seasonal traffic) to figure out min replicas, max replicas, and cost ahead of time.</li>
+          <li><strong>Chaos engineering</strong> — Schedule pod failures at specific times to test how your scaling policy recovers from node outages or AZ failures during load.</li>
+        </ul>
+
         <h3>Supported Platforms</h3>
         <ul>
           <li><strong>Kubernetes HPA</strong> — Horizontal Pod Autoscaler</li>
