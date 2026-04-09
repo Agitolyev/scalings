@@ -391,6 +391,7 @@
           </div>
         </div>
 
+        <!-- Single-run summary (shown when not recording) -->
         <div id="summary-panel" class="summary-panel">
           <div class="stat-card">
             <div class="stat-label">Total Requests</div>
@@ -424,6 +425,33 @@
             <div class="stat-label">Estimated Cost</div>
             <div class="stat-value" id="stat-cost">-</div>
             <button class="cost-basis-btn" id="cost-hint" title="Open Advanced Parameters and adjust cost per pod/hour">Adjust Cost Basis</button>
+          </div>
+        </div>
+
+        <!-- Multi-run simulation dashboard (shown when recording) -->
+        <div id="simulation-dashboard" class="simulation-dashboard hidden">
+          <div class="dashboard-header">
+            <h3 class="dashboard-title">Simulation Dashboard</h3>
+            <span class="dashboard-count" id="dashboard-run-count">0 runs</span>
+          </div>
+          <div class="dashboard-table-wrap">
+            <table class="dashboard-table">
+              <thead>
+                <tr>
+                  <th class="col-name">Run</th>
+                  <th class="col-metric">Requests</th>
+                  <th class="col-metric">Served</th>
+                  <th class="col-metric">Dropped</th>
+                  <th class="col-metric">Drop Rate</th>
+                  <th class="col-metric">Peak Pods</th>
+                  <th class="col-metric">Under-prov</th>
+                  <th class="col-metric">Recovery</th>
+                  <th class="col-metric">Cost</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-runs-body">
+              </tbody>
+            </table>
           </div>
         </div>
 

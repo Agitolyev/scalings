@@ -848,6 +848,123 @@ button:active, .btn:active {
   color: var(--purple);
 }
 
+/* --- Simulation Dashboard (multi-run list) --- */
+.simulation-dashboard {
+  margin-top: 1.5rem;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.dashboard-title {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.dashboard-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.dashboard-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.dashboard-table thead {
+  background: var(--bg-input);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.dashboard-table th {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0.6rem 0.75rem;
+  text-align: right;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.dashboard-table th.col-name {
+  text-align: left;
+}
+
+.dashboard-table td {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  padding: 0.55rem 0.75rem;
+  text-align: right;
+  border-bottom: 1px solid rgba(113, 113, 122, 0.12);
+  white-space: nowrap;
+}
+
+.dashboard-table td.col-name {
+  text-align: left;
+  font-weight: 600;
+}
+
+.dashboard-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.dashboard-table tbody tr:hover {
+  background: rgba(34, 211, 238, 0.04);
+}
+
+.dashboard-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dashboard-table .run-color-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.dashboard-table .cell-danger {
+  color: var(--red);
+  text-shadow: 0 0 8px var(--red-dim);
+}
+
+.dashboard-table .run-latest td {
+  color: var(--cyan);
+}
+
+.dashboard-table .run-latest td.col-name {
+  color: var(--cyan);
+}
+
+.dashboard-table .run-latest .cell-danger {
+  color: var(--red);
+}
+
 /* --- Export Section --- */
 .export-cards {
   display: flex;

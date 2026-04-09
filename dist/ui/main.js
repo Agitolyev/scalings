@@ -47,13 +47,16 @@ class App {
                 this.isRecording = recordToggle.checked;
                 if (purgeBtn)
                     purgeBtn.classList.toggle('hidden', !this.isRecording);
-                if (!this.isRecording)
+                if (!this.isRecording) {
                     this.recordedRuns = [];
+                    this.toggleDashboard(false);
+                }
             });
         }
         if (purgeBtn) {
             purgeBtn.addEventListener('click', () => {
                 this.recordedRuns = [];
+                this.clearDashboard();
                 this.showToast('All recorded runs cleared', 'success');
             });
         }
@@ -214,12 +217,15 @@ class App {
                 const runName = `Run ${this.recordedRuns.length + 1}`;
                 this.recordedRuns.push({ name: runName, result });
                 this.chart.renderMultiRun('sim-chart', this.recordedRuns);
+                this.toggleDashboard(true);
+                this.renderDashboard();
             }
             else {
                 const speed = parseFloat(document.getElementById('playback-speed')?.value || '5');
                 await this.chart.renderAnimated('sim-chart', result, speed);
+                this.toggleDashboard(false);
+                this.renderSummary(result.summary);
             }
-            this.renderSummary(result.summary);
         }
         catch (err) {
             console.error('Simulation error:', err);
@@ -252,6 +258,68 @@ class App {
         if (dropRateEl) {
             dropRateEl.classList.toggle('danger', summary.drop_rate_percent > 1);
         }
+    }
+    toggleDashboard(showDashboard) {
+        const summaryPanel = document.getElementById('summary-panel');
+        const dashboard = document.getElementById('simulation-dashboard');
+        if (summaryPanel)
+            summaryPanel.classList.toggle('hidden', showDashboard);
+        if (dashboard)
+            dashboard.classList.toggle('hidden', !showDashboard);
+    }
+    clearDashboard() {
+        const body = document.getElementById('dashboard-runs-body');
+        if (body)
+            body.innerHTML = '';
+        const count = document.getElementById('dashboard-run-count');
+        if (count)
+            count.textContent = '0 runs';
+    }
+    renderDashboard() {
+        const body = document.getElementById('dashboard-runs-body');
+        const count = document.getElementById('dashboard-run-count');
+        if (!body)
+            return;
+        body.innerHTML = '';
+        if (count) {
+            const n = this.recordedRuns.length;
+            count.textContent = `${n} run${n !== 1 ? 's' : ''}`;
+        }
+        this.recordedRuns.forEach((run, i) => {
+            const s = run.result.summary;
+            const color = App.RUN_COLORS[i % App.RUN_COLORS.length];
+            const isLatest = i === this.recordedRuns.length - 1;
+            const tr = document.createElement('tr');
+            if (isLatest)
+                tr.className = 'run-latest';
+            const nameCell = document.createElement('td');
+            nameCell.className = 'col-name';
+            nameCell.innerHTML = `<span class="run-color-dot" style="background:${color}"></span>${run.name}`;
+            tr.appendChild(nameCell);
+            const metrics = [
+                this.formatNumber(s.total_requests),
+                this.formatNumber(s.total_served),
+                this.formatNumber(s.total_dropped),
+                `${s.drop_rate_percent.toFixed(2)}%`,
+                s.peak_pod_count.toString(),
+                `${s.time_under_provisioned_seconds}s (${s.time_under_provisioned_percent.toFixed(1)}%)`,
+                s.time_to_recover_seconds !== null ? `${s.time_to_recover_seconds}s` : 'N/A',
+                `$${s.estimated_total_cost.toFixed(4)}`,
+            ];
+            const dangerIndices = new Set();
+            if (s.total_dropped > 0)
+                dangerIndices.add(2); // Dropped
+            if (s.drop_rate_percent > 1)
+                dangerIndices.add(3); // Drop Rate
+            metrics.forEach((value, mi) => {
+                const td = document.createElement('td');
+                td.textContent = value;
+                if (dangerIndices.has(mi))
+                    td.className = 'cell-danger';
+                tr.appendChild(td);
+            });
+            body.appendChild(tr);
+        });
     }
     // --- Export / Import ---
     exportSourceConfig() {
@@ -385,6 +453,14 @@ class App {
         }, 3000);
     }
 }
+// --- Simulation Dashboard ---
+App.RUN_COLORS = [
+    'rgba(132, 204, 22, 0.9)',
+    'rgba(251, 191, 36, 0.9)',
+    'rgba(56, 189, 248, 0.9)',
+    'rgba(244, 114, 182, 0.9)',
+    'rgba(52, 211, 153, 0.9)',
+];
 // --- Bootstrap ---
 document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
