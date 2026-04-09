@@ -20,9 +20,6 @@ export class ChartRenderer {
         this.playbackSpeed = 5;
         this.result = null;
         this.onAnimationTick = null;
-        // Compare mode
-        this.compareChart = null;
-        this.compareResult = null;
     }
     setPlaybackSpeed(speed) {
         this.playbackSpeed = speed;
@@ -372,83 +369,79 @@ export class ChartRenderer {
             },
         });
     }
-    renderCompare(canvasId, resultA, resultB) {
+    renderMultiRun(canvasId, runs) {
         this.stop();
         const canvas = document.getElementById(canvasId);
         if (!canvas)
             return;
-        if (this.compareChart) {
-            this.compareChart.destroy();
-            this.compareChart = null;
+        if (this.chart) {
+            this.chart.destroy();
+            this.chart = null;
         }
         const ctx = canvas.getContext('2d');
         if (!ctx)
             return;
-        const maxLen = Math.max(resultA.snapshots.length, resultB.snapshots.length);
-        const labels = Array.from({ length: maxLen }, (_, i) => {
-            const snap = resultA.snapshots[i] || resultB.snapshots[i];
-            return snap ? this.formatTime(snap.time) : '';
-        });
-        this.compareChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: 'Config A - Capacity',
-                        data: resultA.snapshots.map(s => s.capacity_rps),
-                        borderColor: COLORS.capacityGreen,
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.2,
-                        yAxisID: 'y',
-                    },
-                    {
-                        label: 'Config B - Capacity',
-                        data: resultB.snapshots.map(s => s.capacity_rps),
-                        borderColor: 'rgba(251, 191, 36, 0.9)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.2,
-                        yAxisID: 'y',
-                        borderDash: [8, 4],
-                    },
-                    {
-                        label: 'Traffic',
-                        data: resultA.snapshots.map(s => s.traffic_rps),
-                        borderColor: COLORS.traffic,
-                        backgroundColor: COLORS.trafficFill,
-                        fill: true,
-                        borderWidth: 1,
-                        pointRadius: 0,
-                        tension: 0.2,
-                        yAxisID: 'y',
-                    },
-                    {
-                        label: 'Config A - Pods',
-                        data: resultA.snapshots.map(s => s.running_pods),
-                        borderColor: COLORS.pods,
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.2,
-                        yAxisID: 'y1',
-                    },
-                    {
-                        label: 'Config B - Pods',
-                        data: resultB.snapshots.map(s => s.running_pods),
-                        borderColor: 'rgba(251, 146, 60, 0.9)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.2,
-                        yAxisID: 'y1',
-                        borderDash: [8, 4],
-                    },
-                ],
+        const RUN_COLORS = [
+            { capacity: 'rgba(132, 204, 22, 0.9)', pods: 'rgba(179, 71, 217, 0.9)' },
+            { capacity: 'rgba(251, 191, 36, 0.9)', pods: 'rgba(251, 146, 60, 0.9)' },
+            { capacity: 'rgba(56, 189, 248, 0.9)', pods: 'rgba(99, 102, 241, 0.9)' },
+            { capacity: 'rgba(244, 114, 182, 0.9)', pods: 'rgba(232, 121, 249, 0.9)' },
+            { capacity: 'rgba(52, 211, 153, 0.9)', pods: 'rgba(20, 184, 166, 0.9)' },
+        ];
+        // Use the longest run for labels
+        const longest = runs.reduce((a, b) => a.result.snapshots.length >= b.result.snapshots.length ? a : b);
+        const labels = longest.result.snapshots.map(s => this.formatTime(s.time));
+        // Traffic from the latest run (shared x-axis)
+        const latestRun = runs[runs.length - 1];
+        const datasets = [
+            {
+                label: 'Traffic (RPS)',
+                data: latestRun.result.snapshots.map(s => s.traffic_rps),
+                borderColor: COLORS.traffic,
+                backgroundColor: COLORS.trafficFill,
+                fill: true,
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.2,
+                yAxisID: 'y',
+                order: runs.length * 2 + 1,
             },
+        ];
+        runs.forEach((run, i) => {
+            const colors = RUN_COLORS[i % RUN_COLORS.length];
+            const tag = run.name;
+            datasets.push({
+                label: `${tag} Capacity`,
+                data: run.result.snapshots.map(s => s.capacity_rps),
+                borderColor: colors.capacity,
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.2,
+                yAxisID: 'y',
+                order: i * 2 + 1,
+                borderDash: i > 0 ? [6, 3] : undefined,
+            });
+            datasets.push({
+                label: `${tag} Pods`,
+                data: run.result.snapshots.map(s => s.running_pods),
+                borderColor: colors.pods,
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.2,
+                yAxisID: 'y1',
+                order: i * 2,
+                borderDash: [5, 3],
+            });
+        });
+        this.chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: { duration: 500 },
+                animation: { duration: 400 },
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: {
@@ -466,24 +459,52 @@ export class ChartRenderer {
                         bodyColor: '#e2e8f0',
                         borderColor: 'rgba(0, 212, 255, 0.3)',
                         borderWidth: 1,
+                        titleFont: { family: "'JetBrains Mono', monospace", size: 12 },
+                        bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+                        padding: 12,
                     },
                 },
                 scales: {
                     x: {
-                        ticks: { color: '#64748b', maxTicksLimit: 20, maxRotation: 0 },
+                        ticks: {
+                            color: '#64748b',
+                            font: { family: "'JetBrains Mono', monospace", size: 10 },
+                            maxTicksLimit: 20,
+                            maxRotation: 0,
+                        },
                         grid: { color: 'rgba(100, 116, 139, 0.1)' },
                     },
                     y: {
+                        type: 'linear',
                         position: 'left',
-                        title: { display: true, text: 'RPS', color: '#64748b' },
-                        ticks: { color: '#64748b' },
+                        title: {
+                            display: true,
+                            text: 'Requests / Second',
+                            color: '#64748b',
+                            font: { family: "'JetBrains Mono', monospace", size: 11 },
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            font: { family: "'JetBrains Mono', monospace", size: 10 },
+                            callback: (val) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val,
+                        },
                         grid: { color: 'rgba(100, 116, 139, 0.1)' },
                         beginAtZero: true,
                     },
                     y1: {
+                        type: 'linear',
                         position: 'right',
-                        title: { display: true, text: 'Pods', color: '#b347d9' },
-                        ticks: { color: '#b347d9' },
+                        title: {
+                            display: true,
+                            text: 'Pod Count',
+                            color: '#b347d9',
+                            font: { family: "'JetBrains Mono', monospace", size: 11 },
+                        },
+                        ticks: {
+                            color: '#b347d9',
+                            font: { family: "'JetBrains Mono', monospace", size: 10 },
+                            stepSize: 1,
+                        },
                         grid: { drawOnChartArea: false },
                         beginAtZero: true,
                     },
@@ -503,10 +524,6 @@ export class ChartRenderer {
         if (this.chart) {
             this.chart.destroy();
             this.chart = null;
-        }
-        if (this.compareChart) {
-            this.compareChart.destroy();
-            this.compareChart = null;
         }
     }
     formatTime(seconds) {

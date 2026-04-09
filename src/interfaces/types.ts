@@ -203,24 +203,24 @@ export interface PresetScenario {
 // --- Default Values ---
 
 export const DEFAULT_SCALING: ScalingParams = {
-  min_replicas: 2,
+  min_replicas: 1,
   max_replicas: 50,
-  scale_up_threshold: 70,
+  scale_up_threshold: 80,
   scale_down_threshold: 30,
   capacity_per_replica: 100,
   startup_time: 30,
-  scale_up_step: 1,
+  scale_up_step: 4,
   scale_down_step: 1,
 };
 
 export const DEFAULT_ADVANCED: AdvancedParams = {
   metric_observation_delay: 15,
-  cooldown_scale_up: 60,
+  cooldown_scale_up: 15,
   cooldown_scale_down: 300,
   node_provisioning_time: 120,
   cluster_node_capacity: 20,
   pods_per_node: 10,
-  graceful_shutdown_time: 10,
+  graceful_shutdown_time: 30,
   cost_per_replica_hour: 0.05,
 };
 
@@ -264,15 +264,17 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
       name: 'Black Friday Spike',
       scaling: {
         ...DEFAULT_SCALING,
-        min_replicas: 3,
+        min_replicas: 10,
         max_replicas: 100,
-        scale_up_threshold: 60,
-        scale_up_step: 3,
+        scale_up_threshold: 50,
+        scale_up_step: 10,
         startup_time: 30,
+        capacity_per_replica: 40,
       },
       advanced: {
         ...DEFAULT_ADVANCED,
-        cooldown_scale_up: 30,
+        cooldown_scale_up: 15,
+        metric_observation_delay: 5,
       },
       traffic: {
         pattern: 'spike',

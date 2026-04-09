@@ -79,6 +79,7 @@
           <button class="preset-btn" data-preset="Gradual Daily Ramp">Gradual Daily Ramp</button>
           <button class="preset-btn" data-preset="Noisy Neighbor">Noisy Neighbor</button>
           <button class="preset-btn" data-preset="Step Migration">Step Migration</button>
+          <button class="preset-btn preset-btn--reset" id="btn-reset-defaults" title="Reset all parameters to HPA defaults">Reset to Defaults</button>
         </div>
       </section>
 
@@ -252,10 +253,11 @@
           <span id="playback-speed-value" class="speed-value">5x</span>
         </div>
         <button id="btn-simulate" class="btn btn-primary" aria-label="Run the autoscaling simulation" title="Run the simulation with current parameters">Simulate</button>
-        <label class="compare-toggle">
-          <input type="checkbox" id="compare-mode" aria-label="Enable compare mode" title="Compare this run against the previous one">
-          Compare
+        <label class="record-toggle" title="Keep previous runs on chart">
+          <input type="checkbox" id="record-runs" aria-label="Record simulation runs">
+          Record Runs
         </label>
+        <button id="btn-purge-runs" class="btn btn-small btn-purge hidden" title="Clear all recorded runs">Purge All</button>
       </div>
       <div class="progress-bar"><div id="sim-progress" class="progress-fill"></div></div>
     </section>
@@ -421,11 +423,10 @@
           <div class="stat-card">
             <div class="stat-label">Estimated Cost</div>
             <div class="stat-value" id="stat-cost">-</div>
-            <div class="stat-hint" id="cost-hint" title="Click to open Advanced Parameters">Based on Advanced settings</div>
+            <button class="cost-basis-btn" id="cost-hint" title="Open Advanced Parameters and adjust cost per pod/hour">Adjust Cost Basis</button>
           </div>
         </div>
 
-        <div id="compare-results" class="hidden" style="margin-top:1.5rem;"></div>
         </div>
       </div>
     </section>

@@ -508,6 +508,17 @@ button:active, .btn:active {
   background: rgba(167, 139, 250, 0.08);
 }
 
+.preset-btn--reset {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.preset-btn--reset:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
 /* --- Simulation Name --- */
 .sim-name-row {
   display: flex;
@@ -690,16 +701,29 @@ button:active, .btn:active {
   margin-top: 1rem;
 }
 
-.compare-toggle {
+.record-toggle {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.85rem;
   color: var(--text-secondary);
+  cursor: pointer;
 }
 
-.compare-toggle input[type="checkbox"] {
-  accent-color: var(--purple);
+.record-toggle input[type="checkbox"] {
+  accent-color: var(--cyan);
+}
+
+.btn-purge {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px dashed var(--red);
+  color: var(--red);
+  border-radius: 4px;
+}
+
+.btn-purge:hover {
+  background: rgba(239, 68, 68, 0.1);
 }
 
 /* --- Progress Bar --- */
@@ -782,6 +806,35 @@ button:active, .btn:active {
   text-shadow: 0 0 10px var(--red-dim);
 }
 
+.cost-basis-btn {
+  font-size: 0.65rem;
+  color: var(--cyan);
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+
+.cost-basis-btn:hover {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: var(--cyan);
+}
+
+@keyframes highlight-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.5); }
+  50% { box-shadow: 0 0 12px 3px rgba(0, 212, 255, 0.4); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
+}
+
+.param-highlight {
+  animation: highlight-pulse 0.6s ease-out 2;
+  border-color: var(--cyan) !important;
+}
+
 .stat-card .stat-hint {
   font-size: 0.6rem;
   color: var(--text-muted);
@@ -793,43 +846,6 @@ button:active, .btn:active {
 .stat-card .stat-hint:hover {
   opacity: 1;
   color: var(--purple);
-}
-
-/* --- Compare Results --- */
-.compare-grid {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-}
-
-.compare-header {
-  display: grid;
-  grid-template-columns: 120px 1fr 1fr 1fr;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border-subtle);
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-}
-
-.compare-row {
-  display: grid;
-  grid-template-columns: 120px 1fr 1fr 1fr;
-  gap: 0.5rem;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid rgba(100, 116, 139, 0.1);
-}
-
-.compare-label {
-  color: var(--text-secondary);
-}
-
-.compare-row .better {
-  color: var(--lime);
-}
-
-.compare-row .worse {
-  color: var(--red);
 }
 
 /* --- Export Section --- */
@@ -1148,11 +1164,6 @@ section {
     align-items: flex-start;
   }
 
-  .compare-header,
-  .compare-row {
-    grid-template-columns: 80px repeat(3, 1fr);
-    font-size: 0.75rem;
-  }
 }
 
 @media (max-width: 480px) {

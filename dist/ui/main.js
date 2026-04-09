@@ -6,10 +6,9 @@ import { UIControls } from './controls.js';
 import { ChartRenderer } from './chart.js';
 class App {
     constructor() {
-        this.lastResult = null;
-        this.compareResult = null;
-        this.isCompareMode = false;
         this.isSimulating = false;
+        this.isRecording = false;
+        this.recordedRuns = [];
         this.services = createServices();
         this.controls = new UIControls(this.services.traffic);
         this.chart = new ChartRenderer();
@@ -40,6 +39,24 @@ class App {
         if (simBtn) {
             simBtn.addEventListener('click', () => this.runSimulation());
         }
+        // Record runs toggle
+        const recordToggle = document.getElementById('record-runs');
+        const purgeBtn = document.getElementById('btn-purge-runs');
+        if (recordToggle) {
+            recordToggle.addEventListener('change', () => {
+                this.isRecording = recordToggle.checked;
+                if (purgeBtn)
+                    purgeBtn.classList.toggle('hidden', !this.isRecording);
+                if (!this.isRecording)
+                    this.recordedRuns = [];
+            });
+        }
+        if (purgeBtn) {
+            purgeBtn.addEventListener('click', () => {
+                this.recordedRuns = [];
+                this.showToast('All recorded runs cleared', 'success');
+            });
+        }
         // Export source config
         const exportBtn = document.getElementById('btn-export-yaml');
         if (exportBtn) {
@@ -66,14 +83,6 @@ class App {
         const copyExportBtn = document.getElementById('btn-copy-export');
         if (copyExportBtn) {
             copyExportBtn.addEventListener('click', () => this.copyExportOutput());
-        }
-        // Compare mode toggle
-        const compareToggle = document.getElementById('compare-mode');
-        if (compareToggle) {
-            compareToggle.addEventListener('change', () => {
-                this.isCompareMode = compareToggle.checked;
-                this.updateCompareUI();
-            });
         }
         // Playback speed
         const speedSlider = document.getElementById('playback-speed');
@@ -152,8 +161,15 @@ class App {
                 if (advContent && advContent.classList.contains('collapsed')) {
                     advToggle?.click();
                 }
-                document.getElementById('param-cost_per_replica_hour')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                document.getElementById('param-cost_per_replica_hour')?.focus();
+                const costInput = document.getElementById('param-cost_per_replica_hour');
+                if (costInput) {
+                    costInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    costInput.focus();
+                    costInput.classList.add('param-highlight');
+                    costInput.addEventListener('animationend', () => {
+                        costInput.classList.remove('param-highlight');
+                    }, { once: true });
+                }
             });
         }
         // Drag and drop for YAML import
@@ -182,12 +198,7 @@ class App {
             }
             const config = this.controls.getConfig();
             this.services.config.saveLocal(config);
-            if (this.isCompareMode && this.lastResult) {
-                // Store previous result for comparison
-                this.compareResult = this.lastResult;
-            }
             const result = await this.services.simulation.run(config);
-            this.lastResult = result;
             // Show results, hide placeholder
             const placeholder = document.getElementById('sim-placeholder');
             const resultsContent = document.getElementById('sim-results-content');
@@ -199,9 +210,10 @@ class App {
                 outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
             // Render chart
-            if (this.isCompareMode && this.compareResult) {
-                this.chart.renderCompare('sim-chart', this.compareResult, result);
-                this.renderCompareSummary(this.compareResult.summary, result.summary);
+            if (this.isRecording) {
+                const runName = `Run ${this.recordedRuns.length + 1}`;
+                this.recordedRuns.push({ name: runName, result });
+                this.chart.renderMultiRun('sim-chart', this.recordedRuns);
             }
             else {
                 const speed = parseFloat(document.getElementById('playback-speed')?.value || '5');
@@ -239,36 +251,6 @@ class App {
         const dropRateEl = document.getElementById('stat-drop-rate');
         if (dropRateEl) {
             dropRateEl.classList.toggle('danger', summary.drop_rate_percent > 1);
-        }
-    }
-    renderCompareSummary(summaryA, summaryB) {
-        const container = document.getElementById('compare-results');
-        if (!container)
-            return;
-        container.classList.remove('hidden');
-        container.innerHTML = `
-      <h3 class="section-heading">Comparison Results</h3>
-      <div class="compare-grid">
-        <div class="compare-header"><span></span><span>Config A</span><span>Config B</span><span>Diff</span></div>
-        ${this.compareRow('Drop Rate', `${summaryA.drop_rate_percent.toFixed(2)}%`, `${summaryB.drop_rate_percent.toFixed(2)}%`, summaryB.drop_rate_percent - summaryA.drop_rate_percent, '%', true)}
-        ${this.compareRow('Peak Pods', summaryA.peak_pod_count.toString(), summaryB.peak_pod_count.toString(), summaryB.peak_pod_count - summaryA.peak_pod_count)}
-        ${this.compareRow('Dropped', this.formatNumber(summaryA.total_dropped), this.formatNumber(summaryB.total_dropped), summaryB.total_dropped - summaryA.total_dropped, '', true)}
-        ${this.compareRow('Cost*', `$${summaryA.estimated_total_cost.toFixed(4)}`, `$${summaryB.estimated_total_cost.toFixed(4)}`, summaryB.estimated_total_cost - summaryA.estimated_total_cost, '$', true)}
-        ${this.compareRow('Under-prov', `${summaryA.time_under_provisioned_percent.toFixed(1)}%`, `${summaryB.time_under_provisioned_percent.toFixed(1)}%`, summaryB.time_under_provisioned_percent - summaryA.time_under_provisioned_percent, '%', true)}
-      </div>
-      <div class="stat-hint" style="text-align:right;margin-top:0.4rem;">*Cost based on Advanced settings</div>
-    `;
-    }
-    compareRow(label, a, b, diff, unit = '', lowerBetter = false) {
-        const sign = diff > 0 ? '+' : '';
-        const cls = lowerBetter ? (diff < 0 ? 'better' : diff > 0 ? 'worse' : '') : (diff > 0 ? 'better' : diff < 0 ? 'worse' : '');
-        const formattedDiff = unit === '$' ? `${sign}$${Math.abs(diff).toFixed(4)}` : `${sign}${diff.toFixed(2)}${unit}`;
-        return `<div class="compare-row"><span class="compare-label">${label}</span><span>${a}</span><span>${b}</span><span class="${cls}">${formattedDiff}</span></div>`;
-    }
-    updateCompareUI() {
-        const compareResults = document.getElementById('compare-results');
-        if (!this.isCompareMode && compareResults) {
-            compareResults.classList.add('hidden');
         }
     }
     // --- Export / Import ---
