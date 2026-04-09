@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Chart area fill -->
+  <path d="M100 450 L200 420 L300 400 L400 380 L450 200 L500 160 L550 180 L600 300 L700 340 L800 350 L900 360 L1000 370 L1100 380 L1100 500 L100 500 Z" fill="url(#chartGrad)"/>
+
+  <!-- Traffic line (cyan) -->
+  <path d="M100 450 L200 420 L300 400 L400 380 L450 200 L500 160 L550 180 L600 300 L700 340 L800 350 L900 360 L1000 370 L1100 380" stroke="#22d3ee" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Capacity line (green) -->
+  <path d="M100 440 L200 440 L300 440 L400 440 L480 440 L520 380 L560 320 L600 280 L650 260 L700 250 L800 250 L900 300 L1000 350 L1100 380" stroke="#84cc16" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 4"/>
+
+  <!-- Dropped area (red, during spike) -->
+  <path d="M450 200 L480 170 L500 160 L520 175 L480 200 Z" fill="rgba(239, 68, 68, 0.3)"/>
+
+  <!-- Spike dot -->
+  <circle cx="500" cy="160" r="6" fill="#ef4444"/>
+
+  <!-- Grid lines -->
+  <line x1="100" y1="500" x2="1100" y2="500" stroke="rgba(113,113,122,0.25)" stroke-width="1"/>
+  <line x1="100" y1="400" x2="1100" y2="400" stroke="rgba(113,113,122,0.15)" stroke-width="1"/>
+  <line x1="100" y1="300" x2="1100" y2="300" stroke="rgba(113,113,122,0.15)" stroke-width="1"/>
+  <line x1="100" y1="200" x2="1100" y2="200" stroke="rgba(113,113,122,0.15)" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="600" y="80" text-anchor="middle" font-family="monospace" font-size="42" font-weight="bold" fill="#d4d4d8">scalings<tspan fill="#22d3ee">.xyz</tspan></text>
+
+  <!-- Subtitle -->
+  <text x="600" y="120" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#a1a1aa">Simulate your autoscaling before production breaks</text>
+
+  <!-- Legend -->
+  <line x1="300" y1="570" x2="340" y2="570" stroke="#22d3ee" stroke-width="3"/>
+  <text x="350" y="575" font-family="sans-serif" font-size="16" fill="#a1a1aa">Traffic</text>
+  <line x1="480" y1="570" x2="520" y2="570" stroke="#84cc16" stroke-width="3" stroke-dasharray="8 4"/>
+  <text x="530" y="575" font-family="sans-serif" font-size="16" fill="#a1a1aa">Capacity</text>
+  <circle cx="680" cy="570" r="5" fill="#ef4444"/>
+  <text x="695" y="575" font-family="sans-serif" font-size="16" fill="#a1a1aa">Dropped</text>
+</svg>

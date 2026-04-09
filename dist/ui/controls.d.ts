@@ -23,6 +23,11 @@ export declare class UIControls {
     private bindPresets;
     private bindPlatformSelector;
     private bindStepControls;
+    private bindChaosToggle;
+    private bindFailureEventControls;
+    private getFailureEvents;
+    private setFailureEvents;
+    addFailureEventRow(time?: number, count?: number): void;
     addStepRow(rps?: number, duration?: number): void;
     private showPatternParams;
     updatePreview(): void;

@@ -112,12 +112,14 @@ class App {
       if (!trafficToggle || !trafficContent) return;
       trafficContent.classList.toggle('collapsed');
       trafficToggle.classList.toggle('expanded');
+      const isExpanded = !trafficContent.classList.contains('collapsed');
+      trafficToggle.setAttribute('aria-expanded', String(isExpanded));
       const arrow = trafficToggle.querySelector('.toggle-arrow');
       if (arrow) {
-        arrow.textContent = trafficContent.classList.contains('collapsed') ? '\u25B6' : '\u25BC';
+        arrow.textContent = isExpanded ? '\u25BC' : '\u25B6';
       }
       if (trafficPreview) {
-        trafficPreview.classList.toggle('expanded', !trafficContent.classList.contains('collapsed'));
+        trafficPreview.classList.toggle('expanded', isExpanded);
       }
     };
     if (trafficToggle) trafficToggle.addEventListener('click', toggleTraffic);
@@ -137,9 +139,11 @@ class App {
       if (!docsToggle || !docsContent) return;
       docsContent.classList.toggle('collapsed');
       docsToggle.classList.toggle('expanded');
+      const isExpanded = !docsContent.classList.contains('collapsed');
+      docsToggle.setAttribute('aria-expanded', String(isExpanded));
       const arrow = docsToggle.querySelector('.toggle-arrow');
       if (arrow) {
-        arrow.textContent = docsContent.classList.contains('collapsed') ? '\u25B6' : '\u25BC';
+        arrow.textContent = isExpanded ? '\u25BC' : '\u25B6';
       }
     };
     if (docsToggle) docsToggle.addEventListener('click', expandDocs);
@@ -193,9 +197,12 @@ class App {
       const result = await this.services.simulation.run(config);
       this.lastResult = result;
 
-      // Show output section
+      // Show results, hide placeholder
+      const placeholder = document.getElementById('sim-placeholder');
+      const resultsContent = document.getElementById('sim-results-content');
+      if (placeholder) placeholder.classList.add('hidden');
+      if (resultsContent) resultsContent.classList.remove('hidden');
       if (outputSection) {
-        outputSection.classList.remove('hidden');
         outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 

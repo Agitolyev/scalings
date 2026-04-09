@@ -10,6 +10,7 @@ export declare class LocalConfigService implements ConfigService {
     private validateSimulation;
     private validateScaling;
     private validateAdvanced;
+    private validateChaos;
     private validateTraffic;
     private num;
     private toYAML;

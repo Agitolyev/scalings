@@ -35,9 +35,21 @@ export interface AdvancedParams {
   node_provisioning_time: number;     // seconds (0 = pre-provisioned)
   cluster_node_capacity: number;      // max nodes in the cluster
   pods_per_node: number;              // max pods that fit on one node
-  pod_failure_rate: number;           // 0-100 percent probability per tick
   graceful_shutdown_time: number;     // seconds
   cost_per_replica_hour: number;      // USD
+}
+
+// --- Chaos Engineering ---
+
+export interface FailureEvent {
+  time: number;       // seconds into the simulation
+  count: number;      // number of running pods to kill
+}
+
+export interface ChaosConfig {
+  pod_failure_rate: number;       // 0-100 percent probability per tick
+  random_seed: number;            // 0 = non-deterministic, >0 = seeded PRNG
+  failure_events: FailureEvent[]; // scheduled pod kills at specific times
 }
 
 // --- Traffic Patterns ---
@@ -99,6 +111,7 @@ export interface SimulationConfig {
   simulation: SimulationParams;
   scaling: ScalingParams;
   advanced: AdvancedParams;
+  chaos: ChaosConfig;
   traffic: TrafficConfig;
 }
 
@@ -207,9 +220,14 @@ export const DEFAULT_ADVANCED: AdvancedParams = {
   node_provisioning_time: 120,
   cluster_node_capacity: 20,
   pods_per_node: 10,
-  pod_failure_rate: 0,
   graceful_shutdown_time: 10,
   cost_per_replica_hour: 0.05,
+};
+
+export const DEFAULT_CHAOS: ChaosConfig = {
+  pod_failure_rate: 0,
+  random_seed: 0,
+  failure_events: [],
 };
 
 export const DEFAULT_SIMULATION: SimulationParams = {
@@ -234,6 +252,7 @@ export const DEFAULT_CONFIG: SimulationConfig = {
   simulation: DEFAULT_SIMULATION,
   scaling: DEFAULT_SCALING,
   advanced: DEFAULT_ADVANCED,
+  chaos: DEFAULT_CHAOS,
   traffic: DEFAULT_TRAFFIC,
 };
 
@@ -295,8 +314,8 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         pattern: 'wave',
         params: { base_rps: 300, amplitude: 200, period: 120 } as WaveParams,
       },
-      advanced: {
-        ...DEFAULT_ADVANCED,
+      chaos: {
+        ...DEFAULT_CHAOS,
         pod_failure_rate: 0.5,
       },
     },

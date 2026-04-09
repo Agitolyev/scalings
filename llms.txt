@@ -34,6 +34,10 @@ The config parameter is a base64-encoded JSON object matching the SimulationConf
     "cluster_node_capacity": 20, "pods_per_node": 10, "pod_failure_rate": 0,
     "graceful_shutdown_time": 10, "cost_per_replica_hour": 0.05
   },
+  "chaos": {
+    "pod_failure_rate": 0, "random_seed": 0,
+    "failure_events": [{"time": 120, "count": 3}]
+  },
   "traffic": {
     "pattern": "spike",
     "params": { "base_rps": 200, "spike_rps": 2000, "spike_start": 120, "spike_duration": 60 }

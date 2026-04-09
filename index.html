@@ -4,28 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>scalings.xyz — Autoscaling Simulator</title>
-  <meta name="description" content="Simulate your autoscaling before production breaks. Interactive capacity planning tool for Kubernetes HPA, AWS ASG, and GCP MIG.">
+  <meta name="description" content="Iterate on your autoscaling config in seconds, not hours. Figure out whether to optimize startup time, metric delivery, or just overprovision. Free simulator for Kubernetes HPA, AWS ASG, and GCP MIG.">
   <meta name="keywords" content="autoscaling simulator, Kubernetes HPA calculator, test scaling policy, capacity planning tool, pod autoscaler tester, AWS ASG, GCP MIG">
   <meta property="og:title" content="scalings.xyz — Autoscaling Simulator">
-  <meta property="og:description" content="Simulate your autoscaling before production breaks. Interactive capacity planning tool for Kubernetes HPA, AWS ASG, and GCP MIG.">
+  <meta property="og:description" content="Iterate on autoscaling configs in seconds. Figure out whether to optimize startup time, metric delivery, or just overprovision — before it costs real money.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://scalings.xyz">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="scalings.xyz — Autoscaling Simulator">
-  <meta name="twitter:description" content="Simulate your autoscaling before production breaks.">
+  <meta name="twitter:description" content="Should you optimize pod startup time, speed up metric delivery, or just overprovision? Simulate it in seconds and find out.">
+  <meta property="og:image" content="https://scalings.xyz/assets/og-image.svg">
+  <meta property="og:image:type" content="image/svg+xml">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:image" content="https://scalings.xyz/assets/og-image.svg">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" onerror="document.getElementById('chartjs-error').classList.remove('hidden')"></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "scalings.xyz",
     "url": "https://scalings.xyz",
-    "description": "Interactive autoscaling simulator for Kubernetes HPA, AWS ASG, and GCP MIG. Configure scaling parameters, pick a traffic pattern, and run a time-series simulation.",
+    "description": "Iterate on autoscaling configs in seconds instead of running expensive load tests. Figure out whether to optimize pod startup time, metric delivery, or just overprovision. Supports Kubernetes HPA, AWS ASG, and GCP MIG.",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Any",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -34,7 +39,10 @@
   </script>
 </head>
 <body>
-<div class="scanline-overlay"></div>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div id="chartjs-error" class="chartjs-error hidden">
+  Chart.js failed to load. Charts will not render. Check your network connection or ad blocker settings.
+</div>
 <div class="container">
 
   <!-- HEADER -->
@@ -43,7 +51,7 @@
     <a href="#docs" class="btn btn-small header-docs-btn">Docs</a>
   </header>
 
-  <main>
+  <main id="main-content" role="main">
     <!-- CONFIG + BASIC PARAMS ROW -->
     <div class="config-params-row">
       <section id="config-section" class="card">
@@ -113,7 +121,7 @@
 
     <!-- TRAFFIC PATTERN -->
     <section id="traffic-section" class="card lime-border">
-      <button id="traffic-toggle" class="toggle-btn toggle-btn-with-preview" aria-label="Toggle traffic pattern">
+      <button id="traffic-toggle" class="toggle-btn toggle-btn-with-preview" aria-label="Toggle traffic pattern" aria-expanded="false" aria-controls="traffic-content">
         <span class="toggle-arrow">&#9654;</span> Traffic Pattern
       </button>
       <div class="traffic-preview">
@@ -250,7 +258,7 @@
 
     <!-- ADVANCED PARAMETERS -->
     <section id="advanced-params" class="card purple-border">
-      <button id="advanced-toggle" class="toggle-btn" aria-label="Toggle advanced parameters">
+      <button id="advanced-toggle" class="toggle-btn" aria-label="Toggle advanced parameters" aria-expanded="false" aria-controls="advanced-content">
         <span class="toggle-arrow">&#9654;</span> Advanced Parameters
       </button>
       <div id="advanced-content" class="collapsible-content collapsed">
@@ -299,13 +307,6 @@
           </div>
 
           <div class="param-row">
-            <label for="param-pod_failure_rate" title="Random pod failure probability">Pod Failure Rate</label>
-            <input type="number" id="param-pod_failure_rate" min="0" max="100" step="0.1" value="0" aria-label="Pod failure rate value" title="Percentage (0-100) chance a pod randomly dies each tick">
-            <span class="unit">%</span>
-            <button class="tooltip-btn" data-tooltip="Percentage chance (0-100%) that a running pod randomly fails each simulation tick. Simulates crashes and OOM kills.">?</button>
-          </div>
-
-          <div class="param-row">
             <label for="param-graceful_shutdown_time" title="Time a terminating pod keeps serving">Graceful Shutdown Time</label>
             <input type="number" id="param-graceful_shutdown_time" min="0" max="120" value="10" aria-label="Graceful shutdown time value" title="Seconds a terminating pod continues serving during scale-down">
             <span class="unit">s</span>
@@ -336,10 +337,48 @@
       </div>
     </section>
 
+    <!-- CHAOS ENGINEERING -->
+    <section id="chaos-section" class="card red-border">
+      <button id="chaos-toggle" class="toggle-btn" aria-label="Toggle chaos engineering" aria-expanded="false" aria-controls="chaos-content">
+        <span class="toggle-arrow">&#9654;</span> Chaos Engineering
+      </button>
+      <div id="chaos-content" class="collapsible-content collapsed">
+        <fieldset>
+          <legend>Chaos</legend>
+
+          <div class="param-row">
+            <label for="param-pod_failure_rate" title="Random pod failure probability per tick">Pod Failure Rate</label>
+            <input type="number" id="param-pod_failure_rate" min="0" max="100" step="0.1" value="0" aria-label="Pod failure rate value" title="Percentage (0-100) chance a pod randomly dies each tick">
+            <span class="unit">%</span>
+            <button class="tooltip-btn" data-tooltip="Percentage chance (0-100%) that a running pod randomly fails each simulation tick. Simulates steady-state crashes and OOM kills.">?</button>
+          </div>
+
+          <div class="param-row">
+            <label for="param-random_seed" title="Seed for reproducible chaos results">Random Seed</label>
+            <input type="number" id="param-random_seed" min="0" max="999999" value="0" aria-label="Random seed value" title="Set a non-zero seed for reproducible pod failure results">
+            <span class="unit"></span>
+            <button class="tooltip-btn" data-tooltip="Seed for the random number generator. Set to 0 for non-deterministic results, or any positive value for reproducible simulations.">?</button>
+          </div>
+
+          <div class="failure-events-section">
+            <label class="failure-events-label">Scheduled Failure Events</label>
+            <button class="tooltip-btn" data-tooltip="Schedule pod kills at specific times during the simulation. Useful for simulating node failures, AZ outages, or deployment incidents.">?</button>
+            <div id="failure-events-container"></div>
+            <button id="add-failure-event-btn" class="btn btn-small btn-secondary" title="Schedule a pod failure event">+ Add Failure Event</button>
+          </div>
+        </fieldset>
+      </div>
+    </section>
+
     <!-- OUTPUT SECTION -->
-    <section id="output-section" class="hidden">
+    <section id="output-section">
       <div class="card">
         <h2 class="section-heading">Simulation Results</h2>
+        <div id="sim-placeholder" class="sim-placeholder">
+          <div class="placeholder-icon">&#9654;</div>
+          <p>Configure your parameters above and hit <strong>Simulate</strong> to see results.</p>
+        </div>
+        <div id="sim-results-content" class="hidden">
         <div class="crt-glow">
           <div class="chart-container">
             <canvas id="sim-chart"></canvas>
@@ -382,6 +421,7 @@
         </div>
 
         <div id="compare-results" class="hidden" style="margin-top:1.5rem;"></div>
+        </div>
       </div>
     </section>
 
@@ -418,12 +458,22 @@
 
     <!-- DOCS SECTION -->
     <section id="docs" class="card">
-      <button id="docs-toggle" class="toggle-btn" aria-label="Toggle documentation">
+      <button id="docs-toggle" class="toggle-btn" aria-label="Toggle documentation" aria-expanded="false" aria-controls="docs-content">
         <span class="toggle-arrow">&#9654;</span> Documentation
       </button>
       <div id="docs-content" class="collapsible-content collapsed docs-content">
         <h3>What is scalings.xyz?</h3>
         <p>scalings.xyz is an interactive, fully client-side autoscaling simulator. It lets engineers configure autoscaling parameters, select a traffic pattern, and run a discrete-time simulation to visualize whether their scaling policy can handle the load.</p>
+
+        <h3>When to use it</h3>
+        <ul>
+          <li><strong>Prioritize optimizations</strong> — Is it worth cutting pod startup time from 30s to 10s? Would faster metric delivery help more? Or is simply overprovisioning cheaper? Change one parameter, compare runs, and see exactly how many dropped requests each option saves you.</li>
+          <li><strong>Set optimization targets</strong> — Don't guess what your startup time or cooldown "should" be. Simulate a range of values against your actual traffic pattern and pick the one that balances cost vs. reliability.</li>
+          <li><strong>Validate before deploying</strong> — Test a new HPA config, ASG policy, or MIG setup against realistic traffic patterns before it hits production.</li>
+          <li><strong>Post-incident analysis</strong> — Replay a traffic spike that caused an outage. Tweak the scaling config until the sim shows zero drops, then export the fix.</li>
+          <li><strong>Capacity planning</strong> — Model upcoming events (product launches, seasonal traffic) to figure out min replicas, max replicas, and cost ahead of time.</li>
+          <li><strong>Chaos engineering</strong> — Schedule pod failures at specific times to test how your scaling policy recovers from node outages or AZ failures during load.</li>
+        </ul>
 
         <h3>Supported Platforms</h3>
         <ul>
@@ -450,10 +500,15 @@
           <li><code>node_provisioning_time</code> — Time to spin up a new node (default: 120s, 0=pre-provisioned)</li>
           <li><code>cluster_node_capacity</code> — Max nodes in the cluster (default: 20)</li>
           <li><code>pods_per_node</code> — Max pods that fit on a single node (default: 10)</li>
-          <li><code>pod_failure_rate</code> — Random failure percentage per tick, 0-100 (default: 0)</li>
           <li><code>graceful_shutdown_time</code> — Seconds a terminating pod keeps serving (default: 10s)</li>
           <li><code>scale_up_step</code> / <code>scale_down_step</code> — Pods added/removed per event (default: 1)</li>
           <li><code>cost_per_replica_hour</code> — USD per pod-hour for cost estimation (default: $0.05)</li>
+        </ul>
+        <p><strong>Chaos Engineering:</strong></p>
+        <ul>
+          <li><code>pod_failure_rate</code> — Random failure percentage per tick, 0-100 (default: 0)</li>
+          <li><code>random_seed</code> — Seed for reproducible chaos; 0 = non-deterministic (default: 0)</li>
+          <li><code>failure_events</code> — Scheduled pod kills: array of <code>{time, count}</code> objects</li>
         </ul>
 
         <h3>Traffic Patterns</h3>
@@ -490,9 +545,13 @@ advanced:
   node_provisioning_time: 120
   cluster_node_capacity: 20
   pods_per_node: 10
-  pod_failure_rate: 0
   graceful_shutdown_time: 10
   cost_per_replica_hour: 0.05
+chaos:
+  pod_failure_rate: 0
+  random_seed: 0
+  failure_events:
+    - { time: 120, count: 3 }
 traffic:
   pattern: spike
   params:
@@ -518,13 +577,13 @@ traffic:
   <!-- FOOTER -->
   <footer>
     <article class="about-text">
-      <strong>scalings.xyz</strong> is a free, open-source autoscaling simulator and capacity planning tool.
-      Test your Kubernetes HPA configuration, AWS Auto Scaling Group policies, or GCP Managed Instance Group
-      settings before deploying to production. Use it as a pod autoscaler tester, scaling policy validator,
-      or capacity planning calculator. Simulate traffic spikes, gradual ramps, and complex patterns to tune
-      your autoscaling thresholds and avoid downtime.
+      <strong>scalings.xyz</strong> lets you iterate on autoscaling configs in seconds instead
+      of spinning up expensive load tests. Use it to prioritize what's actually worth optimizing
+      &mdash; is cutting pod startup time from 30s to 10s going to help, or should you speed up
+      metric delivery? Maybe just overprovisioning is cheaper. Compare runs, see the numbers,
+      and export production-ready manifests when you're done.
     </article>
-    <p class="copyright">&copy; 2024 scalings.xyz</p>
+    <p class="copyright">&copy; 2025 scalings.xyz</p>
   </footer>
 
 </div>
