@@ -29,7 +29,7 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Arial, sans-serif;
   --radius: 4px;
-  --card-padding: 1.25rem;
+  --card-padding: 1rem;
   --transition: 0.15s ease;
 }
 
@@ -84,7 +84,7 @@ body {
 .config-params-row {
   display: flex;
   gap: 1rem;
-  align-items: flex-start;
+  align-items: start;
 }
 
 .config-params-row > section {
@@ -98,7 +98,7 @@ header {
   align-items: center;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--border-subtle);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .logo {
@@ -122,8 +122,8 @@ header {
   color: var(--text-primary);
   text-transform: none;
   letter-spacing: 0;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -133,15 +133,17 @@ header {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   padding: var(--card-padding);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .card.purple-border {
   border-left: 3px solid var(--purple-dim);
+  padding: 0.75rem var(--card-padding);
 }
 
 .card.lime-border {
   border-left: 3px solid var(--lime-dim);
+  padding: 0.75rem var(--card-padding);
 }
 
 /* --- Fieldset & Legend --- */
@@ -459,9 +461,9 @@ button:active, .btn:active {
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0;
-  padding: 0.5rem 0;
+  padding: 0;
   cursor: pointer;
-  margin-bottom: 0.25rem;
+  margin: 0;
 }
 
 .toggle-btn:hover {
@@ -966,7 +968,7 @@ footer .copyright {
 
 /* --- Section spacing --- */
 section {
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 /* --- Responsive --- */
