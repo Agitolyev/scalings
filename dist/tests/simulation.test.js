@@ -138,6 +138,72 @@ describe('SimulationService — scale-down', () => {
     });
 });
 // ---------------------------------------------------------------------------
+// Snapshot consistency
+// ---------------------------------------------------------------------------
+describe('SimulationService — snapshot consistency', () => {
+    it('pod state counts always sum to total_pods', async () => {
+        const config = makeConfig({
+            simulation: { duration: 200, tick_interval: 1 },
+            scaling: {
+                ...DEFAULT_SCALING,
+                min_replicas: 2,
+                max_replicas: 20,
+                capacity_per_replica: 100,
+                startup_time: 5,
+                scale_up_step: 4,
+            },
+            advanced: {
+                ...DEFAULT_ADVANCED,
+                metric_observation_delay: 0,
+                cooldown_scale_up: 0,
+                cooldown_scale_down: 5,
+                node_provisioning_time: 0,
+                graceful_shutdown_time: 10,
+            },
+            traffic: {
+                pattern: 'spike',
+                params: { base_rps: 50, spike_rps: 1500, spike_start: 10, spike_duration: 30 },
+            },
+        });
+        const result = await svc.run(config);
+        for (const snap of result.snapshots) {
+            const sum = snap.running_pods + snap.starting_pods + snap.shutting_down_pods;
+            assert.equal(sum, snap.total_pods, `t=${snap.time}: running(${snap.running_pods}) + starting(${snap.starting_pods}) + shutting_down(${snap.shutting_down_pods}) = ${sum} != total(${snap.total_pods})`);
+        }
+    });
+    it('scale-down event immediately reflects in running_pods', async () => {
+        const config = makeConfig({
+            simulation: { duration: 100, tick_interval: 1 },
+            scaling: {
+                ...DEFAULT_SCALING,
+                min_replicas: 2,
+                max_replicas: 10,
+                capacity_per_replica: 100,
+                startup_time: 1,
+                scale_up_step: 5,
+            },
+            advanced: {
+                ...DEFAULT_ADVANCED,
+                metric_observation_delay: 0,
+                cooldown_scale_up: 0,
+                cooldown_scale_down: 5,
+                node_provisioning_time: 0,
+                graceful_shutdown_time: 5,
+            },
+            traffic: {
+                pattern: 'spike',
+                params: { base_rps: 50, spike_rps: 1000, spike_start: 5, spike_duration: 10 },
+            },
+        });
+        const result = await svc.run(config);
+        for (const snap of result.snapshots) {
+            if (snap.scale_event === 'down') {
+                assert.ok(snap.shutting_down_pods > 0, `t=${snap.time}: scale-down event but shutting_down_pods is ${snap.shutting_down_pods}`);
+            }
+        }
+    });
+});
+// ---------------------------------------------------------------------------
 // Dropped requests
 // ---------------------------------------------------------------------------
 describe('SimulationService — dropped requests', () => {

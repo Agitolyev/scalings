@@ -195,14 +195,19 @@ export class LocalSimulationService implements SimulationService {
       const billablePods = pods.length; // All pods incur cost
       cumulativeCost += billablePods * advanced.cost_per_replica_hour * tickHours;
 
+      // Re-count pod states after autoscaler decisions for accurate snapshot
+      const snapshotRunning = pods.filter(p => p.state === 'running').length;
+      const snapshotStarting = pods.filter(p => p.state === 'starting').length;
+      const snapshotShuttingDown = pods.filter(p => p.state === 'shutting_down').length;
+
       snapshots.push({
         time,
         traffic_rps: currentTraffic,
         capacity_rps: capacity,
-        running_pods: runningPods.length,
+        running_pods: snapshotRunning,
         total_pods: pods.length,
-        starting_pods: startingPods.length,
-        shutting_down_pods: shuttingDownPods.length,
+        starting_pods: snapshotStarting,
+        shutting_down_pods: snapshotShuttingDown,
         served_requests: served,
         dropped_requests: dropped,
         utilization: Math.min(utilization, 2), // Cap display at 200%
