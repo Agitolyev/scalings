@@ -159,9 +159,17 @@ export class LocalSimulationService {
             const billablePods = pods.length; // All pods incur cost
             cumulativeCost += billablePods * advanced.cost_per_replica_hour * tickHours;
             // Re-count pod states after autoscaler decisions for accurate snapshot
-            const snapshotRunning = pods.filter(p => p.state === 'running').length;
-            const snapshotStarting = pods.filter(p => p.state === 'starting').length;
-            const snapshotShuttingDown = pods.filter(p => p.state === 'shutting_down').length;
+            let snapshotRunning = 0;
+            let snapshotStarting = 0;
+            let snapshotShuttingDown = 0;
+            for (const pod of pods) {
+                if (pod.state === 'running')
+                    snapshotRunning++;
+                else if (pod.state === 'starting')
+                    snapshotStarting++;
+                else if (pod.state === 'shutting_down')
+                    snapshotShuttingDown++;
+            }
             snapshots.push({
                 time,
                 traffic_rps: currentTraffic,
