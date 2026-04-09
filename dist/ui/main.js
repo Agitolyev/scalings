@@ -7,6 +7,8 @@ import { ChartRenderer } from './chart.js';
 class App {
     constructor() {
         this.isSimulating = false;
+        this.isRecording = false;
+        this.recordedRuns = [];
         this.services = createServices();
         this.controls = new UIControls(this.services.traffic);
         this.chart = new ChartRenderer();
@@ -36,6 +38,24 @@ class App {
         const simBtn = document.getElementById('btn-simulate');
         if (simBtn) {
             simBtn.addEventListener('click', () => this.runSimulation());
+        }
+        // Record runs toggle
+        const recordToggle = document.getElementById('record-runs');
+        const purgeBtn = document.getElementById('btn-purge-runs');
+        if (recordToggle) {
+            recordToggle.addEventListener('change', () => {
+                this.isRecording = recordToggle.checked;
+                if (purgeBtn)
+                    purgeBtn.classList.toggle('hidden', !this.isRecording);
+                if (!this.isRecording)
+                    this.recordedRuns = [];
+            });
+        }
+        if (purgeBtn) {
+            purgeBtn.addEventListener('click', () => {
+                this.recordedRuns = [];
+                this.showToast('All recorded runs cleared', 'success');
+            });
         }
         // Export source config
         const exportBtn = document.getElementById('btn-export-yaml');
@@ -183,8 +203,15 @@ class App {
                 outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
             // Render chart
-            const speed = parseFloat(document.getElementById('playback-speed')?.value || '5');
-            await this.chart.renderAnimated('sim-chart', result, speed);
+            if (this.isRecording) {
+                const runName = `Run ${this.recordedRuns.length + 1}`;
+                this.recordedRuns.push({ name: runName, result });
+                this.chart.renderMultiRun('sim-chart', this.recordedRuns);
+            }
+            else {
+                const speed = parseFloat(document.getElementById('playback-speed')?.value || '5');
+                await this.chart.renderAnimated('sim-chart', result, speed);
+            }
             this.renderSummary(result.summary);
         }
         catch (err) {

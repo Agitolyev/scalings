@@ -13,6 +13,10 @@ export declare class ChartRenderer {
     renderAnimated(canvasId: string, result: SimulationResult, playbackSpeed?: number): Promise<void>;
     private animate;
     renderComplete(canvasId: string, result: SimulationResult): void;
+    renderMultiRun(canvasId: string, runs: {
+        name: string;
+        result: SimulationResult;
+    }[]): void;
     stop(): void;
     destroy(): void;
     private formatTime;

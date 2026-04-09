@@ -701,6 +701,31 @@ button:active, .btn:active {
   margin-top: 1rem;
 }
 
+.record-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.record-toggle input[type="checkbox"] {
+  accent-color: var(--cyan);
+}
+
+.btn-purge {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px dashed var(--red);
+  color: var(--red);
+  border-radius: 4px;
+}
+
+.btn-purge:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
 /* --- Progress Bar --- */
 .progress-bar {
   width: 100%;

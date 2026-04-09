@@ -253,6 +253,11 @@
           <span id="playback-speed-value" class="speed-value">5x</span>
         </div>
         <button id="btn-simulate" class="btn btn-primary" aria-label="Run the autoscaling simulation" title="Run the simulation with current parameters">Simulate</button>
+        <label class="record-toggle" title="Keep previous runs on chart">
+          <input type="checkbox" id="record-runs" aria-label="Record simulation runs">
+          Record Runs
+        </label>
+        <button id="btn-purge-runs" class="btn btn-small btn-purge hidden" title="Clear all recorded runs">Purge All</button>
       </div>
       <div class="progress-bar"><div id="sim-progress" class="progress-fill"></div></div>
     </section>
