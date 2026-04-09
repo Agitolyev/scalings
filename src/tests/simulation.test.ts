@@ -286,3 +286,51 @@ describe('SimulationService — summary', () => {
     assert.equal(result.summary.time_under_provisioned_seconds, 0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Seeded PRNG — reproducibility
+// ---------------------------------------------------------------------------
+describe('SimulationService — seeded PRNG', () => {
+  it('produces identical results with the same seed', async () => {
+    const config = makeConfig({
+      simulation: { duration: 60, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 5, max_replicas: 20, capacity_per_replica: 100 },
+      advanced: {
+        ...DEFAULT_ADVANCED,
+        pod_failure_rate: 5,
+        random_seed: 42,
+        metric_observation_delay: 0,
+        cooldown_scale_up: 0,
+        cooldown_scale_down: 9999,
+      },
+      traffic: { pattern: 'steady', params: { rps: 300 } as SteadyParams },
+    });
+    const result1 = await svc.run(config);
+    const result2 = await svc.run(config);
+    assert.deepStrictEqual(result1.snapshots, result2.snapshots);
+    assert.deepStrictEqual(result1.summary, result2.summary);
+  });
+
+  it('produces different results with different seeds', async () => {
+    const baseConfig = makeConfig({
+      simulation: { duration: 60, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 5, max_replicas: 20, capacity_per_replica: 100 },
+      advanced: {
+        ...DEFAULT_ADVANCED,
+        pod_failure_rate: 10,
+        random_seed: 1,
+        metric_observation_delay: 0,
+        cooldown_scale_up: 0,
+        cooldown_scale_down: 9999,
+      },
+      traffic: { pattern: 'steady', params: { rps: 300 } as SteadyParams },
+    });
+    const result1 = await svc.run(baseConfig);
+    const result2 = await svc.run({ ...baseConfig, advanced: { ...baseConfig.advanced, random_seed: 999 } });
+    // With a 10% failure rate over 60 ticks, different seeds should produce different pod counts
+    const pods1 = result1.snapshots.map(s => s.running_pods);
+    const pods2 = result2.snapshots.map(s => s.running_pods);
+    const identical = pods1.every((v, i) => v === pods2[i]);
+    assert.ok(!identical, 'Different seeds should produce different results');
+  });
+});

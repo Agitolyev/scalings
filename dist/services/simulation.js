@@ -6,11 +6,25 @@ export class LocalSimulationService {
     constructor(trafficService) {
         this.trafficService = trafficService || new LocalTrafficPatternService();
     }
+    /** Simple seeded PRNG (mulberry32). Returns a function that produces values in [0, 1). */
+    createRng(seed) {
+        let s = seed | 0;
+        return () => {
+            s = (s + 0x6D2B79F5) | 0;
+            let t = Math.imul(s ^ (s >>> 15), 1 | s);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
     async run(config) {
         const { simulation, scaling, advanced, traffic } = config;
         const totalTicks = Math.ceil(simulation.duration / simulation.tick_interval);
         // Generate traffic pattern
         const trafficData = this.trafficService.generate(traffic, simulation.duration, simulation.tick_interval);
+        // Set up random number generator (seeded or Math.random)
+        const rng = advanced.random_seed > 0
+            ? this.createRng(advanced.random_seed)
+            : Math.random;
         // State
         let pods = [];
         let nextPodId = 0;
@@ -33,7 +47,7 @@ export class LocalSimulationService {
             if (advanced.pod_failure_rate > 0) {
                 const failureProbability = advanced.pod_failure_rate / 100;
                 pods = pods.filter(pod => {
-                    if (pod.state === 'running' && Math.random() < failureProbability) {
+                    if (pod.state === 'running' && rng() < failureProbability) {
                         return false; // Pod dies
                     }
                     return true;

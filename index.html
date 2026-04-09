@@ -13,12 +13,17 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="scalings.xyz — Autoscaling Simulator">
   <meta name="twitter:description" content="Simulate your autoscaling before production breaks.">
+  <meta property="og:image" content="https://scalings.xyz/assets/og-image.svg">
+  <meta property="og:image:type" content="image/svg+xml">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:image" content="https://scalings.xyz/assets/og-image.svg">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" onerror="document.getElementById('chartjs-error').classList.remove('hidden')"></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -34,7 +39,10 @@
   </script>
 </head>
 <body>
-<div class="scanline-overlay"></div>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div id="chartjs-error" class="chartjs-error hidden">
+  Chart.js failed to load. Charts will not render. Check your network connection or ad blocker settings.
+</div>
 <div class="container">
 
   <!-- HEADER -->
@@ -43,7 +51,7 @@
     <a href="#docs" class="btn btn-small header-docs-btn">Docs</a>
   </header>
 
-  <main>
+  <main id="main-content" role="main">
     <!-- CONFIG + BASIC PARAMS ROW -->
     <div class="config-params-row">
       <section id="config-section" class="card">
@@ -113,7 +121,7 @@
 
     <!-- TRAFFIC PATTERN -->
     <section id="traffic-section" class="card lime-border">
-      <button id="traffic-toggle" class="toggle-btn toggle-btn-with-preview" aria-label="Toggle traffic pattern">
+      <button id="traffic-toggle" class="toggle-btn toggle-btn-with-preview" aria-label="Toggle traffic pattern" aria-expanded="false" aria-controls="traffic-content">
         <span class="toggle-arrow">&#9654;</span> Traffic Pattern
       </button>
       <div class="traffic-preview">
@@ -250,7 +258,7 @@
 
     <!-- ADVANCED PARAMETERS -->
     <section id="advanced-params" class="card purple-border">
-      <button id="advanced-toggle" class="toggle-btn" aria-label="Toggle advanced parameters">
+      <button id="advanced-toggle" class="toggle-btn" aria-label="Toggle advanced parameters" aria-expanded="false" aria-controls="advanced-content">
         <span class="toggle-arrow">&#9654;</span> Advanced Parameters
       </button>
       <div id="advanced-content" class="collapsible-content collapsed">
@@ -332,14 +340,26 @@
             <span class="unit">$/h</span>
             <button class="tooltip-btn" data-tooltip="Cost per pod/instance per hour in USD. Used to estimate total simulation cost.">?</button>
           </div>
+
+          <div class="param-row">
+            <label for="param-random_seed" title="Seed for reproducible random pod failures">Random Seed</label>
+            <input type="number" id="param-random_seed" min="0" max="999999" value="0" aria-label="Random seed value" title="Set a non-zero seed for reproducible pod failure results">
+            <span class="unit"></span>
+            <button class="tooltip-btn" data-tooltip="Seed for the random number generator used in pod failures. Set to 0 for non-deterministic results, or any other value for reproducible simulations.">?</button>
+          </div>
         </fieldset>
       </div>
     </section>
 
     <!-- OUTPUT SECTION -->
-    <section id="output-section" class="hidden">
+    <section id="output-section">
       <div class="card">
         <h2 class="section-heading">Simulation Results</h2>
+        <div id="sim-placeholder" class="sim-placeholder">
+          <div class="placeholder-icon">&#9654;</div>
+          <p>Configure your parameters above and hit <strong>Simulate</strong> to see results.</p>
+        </div>
+        <div id="sim-results-content" class="hidden">
         <div class="crt-glow">
           <div class="chart-container">
             <canvas id="sim-chart"></canvas>
@@ -382,6 +402,7 @@
         </div>
 
         <div id="compare-results" class="hidden" style="margin-top:1.5rem;"></div>
+        </div>
       </div>
     </section>
 
@@ -418,7 +439,7 @@
 
     <!-- DOCS SECTION -->
     <section id="docs" class="card">
-      <button id="docs-toggle" class="toggle-btn" aria-label="Toggle documentation">
+      <button id="docs-toggle" class="toggle-btn" aria-label="Toggle documentation" aria-expanded="false" aria-controls="docs-content">
         <span class="toggle-arrow">&#9654;</span> Documentation
       </button>
       <div id="docs-content" class="collapsible-content collapsed docs-content">
@@ -454,6 +475,7 @@
           <li><code>graceful_shutdown_time</code> — Seconds a terminating pod keeps serving (default: 10s)</li>
           <li><code>scale_up_step</code> / <code>scale_down_step</code> — Pods added/removed per event (default: 1)</li>
           <li><code>cost_per_replica_hour</code> — USD per pod-hour for cost estimation (default: $0.05)</li>
+          <li><code>random_seed</code> — Seed for reproducible pod failures; 0 = non-deterministic (default: 0)</li>
         </ul>
 
         <h3>Traffic Patterns</h3>
@@ -493,6 +515,7 @@ advanced:
   pod_failure_rate: 0
   graceful_shutdown_time: 10
   cost_per_replica_hour: 0.05
+  random_seed: 0
 traffic:
   pattern: spike
   params:
@@ -518,13 +541,12 @@ traffic:
   <!-- FOOTER -->
   <footer>
     <article class="about-text">
-      <strong>scalings.xyz</strong> is a free, open-source autoscaling simulator and capacity planning tool.
-      Test your Kubernetes HPA configuration, AWS Auto Scaling Group policies, or GCP Managed Instance Group
-      settings before deploying to production. Use it as a pod autoscaler tester, scaling policy validator,
-      or capacity planning calculator. Simulate traffic spikes, gradual ramps, and complex patterns to tune
-      your autoscaling thresholds and avoid downtime.
+      <strong>scalings.xyz</strong> is a free, open-source tool that lets you simulate autoscaling
+      policies before they hit production. Pick a traffic pattern, tweak your thresholds, and see
+      exactly when pods spin up, when requests get dropped, and what it all costs &mdash; without
+      touching a real cluster.
     </article>
-    <p class="copyright">&copy; 2024 scalings.xyz</p>
+    <p class="copyright">&copy; 2025 scalings.xyz</p>
   </footer>
 
 </div>

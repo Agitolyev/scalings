@@ -126,6 +126,7 @@ export class LocalConfigService implements ConfigService {
       pod_failure_rate: this.num(obj.pod_failure_rate, d.pod_failure_rate),
       graceful_shutdown_time: this.num(obj.graceful_shutdown_time, d.graceful_shutdown_time),
       cost_per_replica_hour: this.num(obj.cost_per_replica_hour, d.cost_per_replica_hour),
+      random_seed: this.num(obj.random_seed, d.random_seed),
     };
   }
 
@@ -184,6 +185,7 @@ export class LocalConfigService implements ConfigService {
     lines.push(`  pod_failure_rate: ${config.advanced.pod_failure_rate}`);
     lines.push(`  graceful_shutdown_time: ${config.advanced.graceful_shutdown_time}`);
     lines.push(`  cost_per_replica_hour: ${config.advanced.cost_per_replica_hour}`);
+    lines.push(`  random_seed: ${config.advanced.random_seed}`);
     lines.push('');
     lines.push('traffic:');
     lines.push(`  pattern: ${config.traffic.pattern}`);

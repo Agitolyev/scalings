@@ -57,6 +57,7 @@ export class UIControls {
                 pod_failure_rate: this.getNumericValue('param-pod_failure_rate', DEFAULT_CONFIG.advanced.pod_failure_rate),
                 graceful_shutdown_time: this.getNumericValue('param-graceful_shutdown_time', DEFAULT_CONFIG.advanced.graceful_shutdown_time),
                 cost_per_replica_hour: this.getNumericValue('param-cost_per_replica_hour', DEFAULT_CONFIG.advanced.cost_per_replica_hour),
+                random_seed: this.getNumericValue('param-random_seed', DEFAULT_CONFIG.advanced.random_seed),
             },
             traffic: this.getTrafficConfig(),
         };
@@ -88,6 +89,7 @@ export class UIControls {
         this.setNumericValue('param-pod_failure_rate', config.advanced.pod_failure_rate);
         this.setNumericValue('param-graceful_shutdown_time', config.advanced.graceful_shutdown_time);
         this.setNumericValue('param-cost_per_replica_hour', config.advanced.cost_per_replica_hour);
+        this.setNumericValue('param-random_seed', config.advanced.random_seed);
         // Traffic
         this.setTrafficConfig(config.traffic);
         this.updatePreview();
@@ -273,9 +275,11 @@ export class UIControls {
             toggle.addEventListener('click', () => {
                 content.classList.toggle('collapsed');
                 toggle.classList.toggle('expanded');
+                const isExpanded = !content.classList.contains('collapsed');
+                toggle.setAttribute('aria-expanded', String(isExpanded));
                 const arrow = toggle.querySelector('.toggle-arrow');
                 if (arrow) {
-                    arrow.textContent = content.classList.contains('collapsed') ? '\u25B6' : '\u25BC';
+                    arrow.textContent = isExpanded ? '\u25BC' : '\u25B6';
                 }
             });
         }

@@ -53,9 +53,64 @@ body {
   overflow-x: hidden;
 }
 
-/* --- Scanline Overlay (very subtle) --- */
-.scanline-overlay {
-  display: none;
+/* --- Skip Link (Accessibility) --- */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--cyan);
+  color: var(--bg-primary);
+  padding: 0.5rem 1rem;
+  z-index: 10000;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius) 0;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* --- Chart.js Load Error Banner --- */
+.chartjs-error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid var(--red-dim);
+  color: var(--red);
+  padding: 0.75rem 1.5rem;
+  text-align: center;
+  font-size: 0.85rem;
+  border-radius: var(--radius);
+  margin: 0.75rem auto;
+  max-width: 1200px;
+}
+
+/* --- Simulation Placeholder --- */
+.sim-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+  text-align: center;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.sim-placeholder .placeholder-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.4;
+}
+
+.sim-placeholder p {
+  font-size: 0.9rem;
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.sim-placeholder strong {
+  color: var(--cyan);
 }
 
 /* --- Scrollbar --- */

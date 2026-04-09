@@ -32,7 +32,8 @@ The config parameter is a base64-encoded JSON object matching the SimulationConf
     "metric_observation_delay": 15, "cooldown_scale_up": 60,
     "cooldown_scale_down": 300, "node_provisioning_time": 120,
     "cluster_node_capacity": 20, "pods_per_node": 10, "pod_failure_rate": 0,
-    "graceful_shutdown_time": 10, "cost_per_replica_hour": 0.05
+    "graceful_shutdown_time": 10, "cost_per_replica_hour": 0.05,
+    "random_seed": 0
   },
   "traffic": {
     "pattern": "spike",

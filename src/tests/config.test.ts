@@ -104,6 +104,7 @@ describe('ConfigService — YAML round-trip', () => {
         pod_failure_rate: 1,
         graceful_shutdown_time: 20,
         cost_per_replica_hour: 0.10,
+        random_seed: 0,
       },
     });
     const yaml = svc.export(config);

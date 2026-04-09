@@ -38,6 +38,7 @@ export interface AdvancedParams {
   pod_failure_rate: number;           // 0-100 percent probability per tick
   graceful_shutdown_time: number;     // seconds
   cost_per_replica_hour: number;      // USD
+  random_seed: number;               // 0 = non-deterministic, >0 = seeded PRNG
 }
 
 // --- Traffic Patterns ---
@@ -210,6 +211,7 @@ export const DEFAULT_ADVANCED: AdvancedParams = {
   pod_failure_rate: 0,
   graceful_shutdown_time: 10,
   cost_per_replica_hour: 0.05,
+  random_seed: 0,
 };
 
 export const DEFAULT_SIMULATION: SimulationParams = {

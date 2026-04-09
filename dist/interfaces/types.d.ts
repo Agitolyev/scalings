@@ -25,6 +25,7 @@ export interface AdvancedParams {
     pod_failure_rate: number;
     graceful_shutdown_time: number;
     cost_per_replica_hour: number;
+    random_seed: number;
 }
 export interface SteadyParams {
     rps: number;

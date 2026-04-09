@@ -22,6 +22,7 @@ export const DEFAULT_ADVANCED = {
     pod_failure_rate: 0,
     graceful_shutdown_time: 10,
     cost_per_replica_hour: 0.05,
+    random_seed: 0,
 };
 export const DEFAULT_SIMULATION = {
     duration: 600,
