@@ -19,10 +19,13 @@ export const DEFAULT_ADVANCED = {
     node_provisioning_time: 120,
     cluster_node_capacity: 20,
     pods_per_node: 10,
-    pod_failure_rate: 0,
     graceful_shutdown_time: 10,
     cost_per_replica_hour: 0.05,
+};
+export const DEFAULT_CHAOS = {
+    pod_failure_rate: 0,
     random_seed: 0,
+    failure_events: [],
 };
 export const DEFAULT_SIMULATION = {
     duration: 600,
@@ -44,6 +47,7 @@ export const DEFAULT_CONFIG = {
     simulation: DEFAULT_SIMULATION,
     scaling: DEFAULT_SCALING,
     advanced: DEFAULT_ADVANCED,
+    chaos: DEFAULT_CHAOS,
     traffic: DEFAULT_TRAFFIC,
 };
 export const PRESET_SCENARIOS = [
@@ -104,8 +108,8 @@ export const PRESET_SCENARIOS = [
                 pattern: 'wave',
                 params: { base_rps: 300, amplitude: 200, period: 120 },
             },
-            advanced: {
-                ...DEFAULT_ADVANCED,
+            chaos: {
+                ...DEFAULT_CHAOS,
                 pod_failure_rate: 0.5,
             },
         },

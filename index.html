@@ -307,13 +307,6 @@
           </div>
 
           <div class="param-row">
-            <label for="param-pod_failure_rate" title="Random pod failure probability">Pod Failure Rate</label>
-            <input type="number" id="param-pod_failure_rate" min="0" max="100" step="0.1" value="0" aria-label="Pod failure rate value" title="Percentage (0-100) chance a pod randomly dies each tick">
-            <span class="unit">%</span>
-            <button class="tooltip-btn" data-tooltip="Percentage chance (0-100%) that a running pod randomly fails each simulation tick. Simulates crashes and OOM kills.">?</button>
-          </div>
-
-          <div class="param-row">
             <label for="param-graceful_shutdown_time" title="Time a terminating pod keeps serving">Graceful Shutdown Time</label>
             <input type="number" id="param-graceful_shutdown_time" min="0" max="120" value="10" aria-label="Graceful shutdown time value" title="Seconds a terminating pod continues serving during scale-down">
             <span class="unit">s</span>
@@ -340,12 +333,38 @@
             <span class="unit">$/h</span>
             <button class="tooltip-btn" data-tooltip="Cost per pod/instance per hour in USD. Used to estimate total simulation cost.">?</button>
           </div>
+        </fieldset>
+      </div>
+    </section>
+
+    <!-- CHAOS ENGINEERING -->
+    <section id="chaos-section" class="card red-border">
+      <button id="chaos-toggle" class="toggle-btn" aria-label="Toggle chaos engineering" aria-expanded="false" aria-controls="chaos-content">
+        <span class="toggle-arrow">&#9654;</span> Chaos Engineering
+      </button>
+      <div id="chaos-content" class="collapsible-content collapsed">
+        <fieldset>
+          <legend>Chaos</legend>
 
           <div class="param-row">
-            <label for="param-random_seed" title="Seed for reproducible random pod failures">Random Seed</label>
+            <label for="param-pod_failure_rate" title="Random pod failure probability per tick">Pod Failure Rate</label>
+            <input type="number" id="param-pod_failure_rate" min="0" max="100" step="0.1" value="0" aria-label="Pod failure rate value" title="Percentage (0-100) chance a pod randomly dies each tick">
+            <span class="unit">%</span>
+            <button class="tooltip-btn" data-tooltip="Percentage chance (0-100%) that a running pod randomly fails each simulation tick. Simulates steady-state crashes and OOM kills.">?</button>
+          </div>
+
+          <div class="param-row">
+            <label for="param-random_seed" title="Seed for reproducible chaos results">Random Seed</label>
             <input type="number" id="param-random_seed" min="0" max="999999" value="0" aria-label="Random seed value" title="Set a non-zero seed for reproducible pod failure results">
             <span class="unit"></span>
-            <button class="tooltip-btn" data-tooltip="Seed for the random number generator used in pod failures. Set to 0 for non-deterministic results, or any other value for reproducible simulations.">?</button>
+            <button class="tooltip-btn" data-tooltip="Seed for the random number generator. Set to 0 for non-deterministic results, or any positive value for reproducible simulations.">?</button>
+          </div>
+
+          <div class="failure-events-section">
+            <label class="failure-events-label">Scheduled Failure Events</label>
+            <button class="tooltip-btn" data-tooltip="Schedule pod kills at specific times during the simulation. Useful for simulating node failures, AZ outages, or deployment incidents.">?</button>
+            <div id="failure-events-container"></div>
+            <button id="add-failure-event-btn" class="btn btn-small btn-secondary" title="Schedule a pod failure event">+ Add Failure Event</button>
           </div>
         </fieldset>
       </div>
@@ -471,11 +490,15 @@
           <li><code>node_provisioning_time</code> — Time to spin up a new node (default: 120s, 0=pre-provisioned)</li>
           <li><code>cluster_node_capacity</code> — Max nodes in the cluster (default: 20)</li>
           <li><code>pods_per_node</code> — Max pods that fit on a single node (default: 10)</li>
-          <li><code>pod_failure_rate</code> — Random failure percentage per tick, 0-100 (default: 0)</li>
           <li><code>graceful_shutdown_time</code> — Seconds a terminating pod keeps serving (default: 10s)</li>
           <li><code>scale_up_step</code> / <code>scale_down_step</code> — Pods added/removed per event (default: 1)</li>
           <li><code>cost_per_replica_hour</code> — USD per pod-hour for cost estimation (default: $0.05)</li>
-          <li><code>random_seed</code> — Seed for reproducible pod failures; 0 = non-deterministic (default: 0)</li>
+        </ul>
+        <p><strong>Chaos Engineering:</strong></p>
+        <ul>
+          <li><code>pod_failure_rate</code> — Random failure percentage per tick, 0-100 (default: 0)</li>
+          <li><code>random_seed</code> — Seed for reproducible chaos; 0 = non-deterministic (default: 0)</li>
+          <li><code>failure_events</code> — Scheduled pod kills: array of <code>{time, count}</code> objects</li>
         </ul>
 
         <h3>Traffic Patterns</h3>
@@ -512,10 +535,13 @@ advanced:
   node_provisioning_time: 120
   cluster_node_capacity: 20
   pods_per_node: 10
-  pod_failure_rate: 0
   graceful_shutdown_time: 10
   cost_per_replica_hour: 0.05
+chaos:
+  pod_failure_rate: 0
   random_seed: 0
+  failure_events:
+    - { time: 120, count: 3 }
 traffic:
   pattern: spike
   params:

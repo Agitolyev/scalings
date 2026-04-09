@@ -6,6 +6,7 @@ import {
   DEFAULT_CONFIG,
   DEFAULT_SCALING,
   DEFAULT_ADVANCED,
+  DEFAULT_CHAOS,
   DEFAULT_SIMULATION,
   SteadyParams,
   SpikeParams,
@@ -297,12 +298,11 @@ describe('SimulationService — seeded PRNG', () => {
       scaling: { ...DEFAULT_SCALING, min_replicas: 5, max_replicas: 20, capacity_per_replica: 100 },
       advanced: {
         ...DEFAULT_ADVANCED,
-        pod_failure_rate: 5,
-        random_seed: 42,
         metric_observation_delay: 0,
         cooldown_scale_up: 0,
         cooldown_scale_down: 9999,
       },
+      chaos: { ...DEFAULT_CHAOS, pod_failure_rate: 5, random_seed: 42 },
       traffic: { pattern: 'steady', params: { rps: 300 } as SteadyParams },
     });
     const result1 = await svc.run(config);
@@ -317,20 +317,55 @@ describe('SimulationService — seeded PRNG', () => {
       scaling: { ...DEFAULT_SCALING, min_replicas: 5, max_replicas: 20, capacity_per_replica: 100 },
       advanced: {
         ...DEFAULT_ADVANCED,
-        pod_failure_rate: 10,
-        random_seed: 1,
         metric_observation_delay: 0,
         cooldown_scale_up: 0,
         cooldown_scale_down: 9999,
       },
+      chaos: { ...DEFAULT_CHAOS, pod_failure_rate: 10, random_seed: 1 },
       traffic: { pattern: 'steady', params: { rps: 300 } as SteadyParams },
     });
     const result1 = await svc.run(baseConfig);
-    const result2 = await svc.run({ ...baseConfig, advanced: { ...baseConfig.advanced, random_seed: 999 } });
+    const result2 = await svc.run({ ...baseConfig, chaos: { ...baseConfig.chaos, random_seed: 999 } });
     // With a 10% failure rate over 60 ticks, different seeds should produce different pod counts
     const pods1 = result1.snapshots.map(s => s.running_pods);
     const pods2 = result2.snapshots.map(s => s.running_pods);
     const identical = pods1.every((v, i) => v === pods2[i]);
     assert.ok(!identical, 'Different seeds should produce different results');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Scheduled failure events
+// ---------------------------------------------------------------------------
+describe('SimulationService — failure events', () => {
+  it('kills pods at the scheduled time', async () => {
+    const config = makeConfig({
+      simulation: { duration: 30, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 5, max_replicas: 5, capacity_per_replica: 100 },
+      chaos: {
+        ...DEFAULT_CHAOS,
+        failure_events: [{ time: 10, count: 3 }],
+      },
+      traffic: { pattern: 'steady', params: { rps: 100 } as SteadyParams },
+    });
+    const result = await svc.run(config);
+    // Before event: 5 running. At t=10: 3 killed → 2 running
+    const atEvent = result.snapshots[10];
+    assert.equal(atEvent.running_pods, 2, `expected 2 running pods at t=10, got ${atEvent.running_pods}`);
+  });
+
+  it('does not kill more pods than are running', async () => {
+    const config = makeConfig({
+      simulation: { duration: 10, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 2, max_replicas: 2, capacity_per_replica: 100 },
+      chaos: {
+        ...DEFAULT_CHAOS,
+        failure_events: [{ time: 5, count: 10 }],
+      },
+      traffic: { pattern: 'steady', params: { rps: 50 } as SteadyParams },
+    });
+    const result = await svc.run(config);
+    const atEvent = result.snapshots[5];
+    assert.equal(atEvent.running_pods, 0, `expected 0 running pods, got ${atEvent.running_pods}`);
   });
 });

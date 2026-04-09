@@ -10,6 +10,8 @@ import {
   TrafficPatternType,
   ScalingParams,
   AdvancedParams,
+  ChaosConfig,
+  FailureEvent,
   SimulationParams,
   TrafficConfig,
   SteadyParams,
@@ -86,6 +88,9 @@ export class LocalConfigService implements ConfigService {
     if (obj.advanced && typeof obj.advanced === 'object') {
       config.advanced = this.validateAdvanced(obj.advanced as Record<string, unknown>);
     }
+    if (obj.chaos && typeof obj.chaos === 'object') {
+      config.chaos = this.validateChaos(obj.chaos as Record<string, unknown>);
+    }
     if (obj.traffic && typeof obj.traffic === 'object') {
       config.traffic = this.validateTraffic(obj.traffic as Record<string, unknown>);
     }
@@ -123,10 +128,29 @@ export class LocalConfigService implements ConfigService {
       node_provisioning_time: this.num(obj.node_provisioning_time, d.node_provisioning_time),
       cluster_node_capacity: this.num(obj.cluster_node_capacity, d.cluster_node_capacity),
       pods_per_node: this.num(obj.pods_per_node, d.pods_per_node),
-      pod_failure_rate: this.num(obj.pod_failure_rate, d.pod_failure_rate),
       graceful_shutdown_time: this.num(obj.graceful_shutdown_time, d.graceful_shutdown_time),
       cost_per_replica_hour: this.num(obj.cost_per_replica_hour, d.cost_per_replica_hour),
+    };
+  }
+
+  private validateChaos(obj: Record<string, unknown>): ChaosConfig {
+    const d = DEFAULT_CONFIG.chaos;
+    const events: FailureEvent[] = [];
+    if (Array.isArray(obj.failure_events)) {
+      for (const item of obj.failure_events) {
+        if (item && typeof item === 'object') {
+          const e = item as Record<string, unknown>;
+          events.push({
+            time: this.num(e.time, 0),
+            count: this.num(e.count, 1),
+          });
+        }
+      }
+    }
+    return {
+      pod_failure_rate: this.num(obj.pod_failure_rate, d.pod_failure_rate),
       random_seed: this.num(obj.random_seed, d.random_seed),
+      failure_events: events,
     };
   }
 
@@ -182,10 +206,20 @@ export class LocalConfigService implements ConfigService {
     lines.push(`  node_provisioning_time: ${config.advanced.node_provisioning_time}`);
     lines.push(`  cluster_node_capacity: ${config.advanced.cluster_node_capacity}`);
     lines.push(`  pods_per_node: ${config.advanced.pods_per_node}`);
-    lines.push(`  pod_failure_rate: ${config.advanced.pod_failure_rate}`);
     lines.push(`  graceful_shutdown_time: ${config.advanced.graceful_shutdown_time}`);
     lines.push(`  cost_per_replica_hour: ${config.advanced.cost_per_replica_hour}`);
-    lines.push(`  random_seed: ${config.advanced.random_seed}`);
+    lines.push('');
+    lines.push('chaos:');
+    lines.push(`  pod_failure_rate: ${config.chaos.pod_failure_rate}`);
+    lines.push(`  random_seed: ${config.chaos.random_seed}`);
+    if (config.chaos.failure_events.length > 0) {
+      lines.push('  failure_events:');
+      for (const evt of config.chaos.failure_events) {
+        lines.push(`    - { time: ${evt.time}, count: ${evt.count} }`);
+      }
+    } else {
+      lines.push('  failure_events: []');
+    }
     lines.push('');
     lines.push('traffic:');
     lines.push(`  pattern: ${config.traffic.pattern}`);
@@ -326,7 +360,7 @@ export class LocalConfigService implements ConfigService {
         parent[key] = parsedValue;
 
         // Check if this starts an array context
-        if (key === 'steps' || key === 'series') {
+        if (key === 'steps' || key === 'series' || key === 'failure_events') {
           const arr: unknown[] = [];
           parent[key] = arr;
           currentArray = arr;
@@ -340,7 +374,7 @@ export class LocalConfigService implements ConfigService {
       }
 
       // Handle array-valued keys
-      if ((key === 'steps' || key === 'series') && value === '') {
+      if ((key === 'steps' || key === 'series' || key === 'failure_events') && value === '') {
         const arr: unknown[] = [];
         parent[key] = arr;
         currentArray = arr;

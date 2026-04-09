@@ -14,9 +14,11 @@ export class UIControls {
         this.bindSliders();
         this.bindPatternSelector();
         this.bindAdvancedToggle();
+        this.bindChaosToggle();
         this.bindPresets();
         this.bindPlatformSelector();
         this.bindStepControls();
+        this.bindFailureEventControls();
         this.showPatternParams(this.currentPattern);
         this.updatePreview();
     }
@@ -54,10 +56,13 @@ export class UIControls {
                 node_provisioning_time: this.getNumericValue('param-node_provisioning_time', DEFAULT_CONFIG.advanced.node_provisioning_time),
                 cluster_node_capacity: this.getNumericValue('param-cluster_node_capacity', DEFAULT_CONFIG.advanced.cluster_node_capacity),
                 pods_per_node: this.getNumericValue('param-pods_per_node', DEFAULT_CONFIG.advanced.pods_per_node),
-                pod_failure_rate: this.getNumericValue('param-pod_failure_rate', DEFAULT_CONFIG.advanced.pod_failure_rate),
                 graceful_shutdown_time: this.getNumericValue('param-graceful_shutdown_time', DEFAULT_CONFIG.advanced.graceful_shutdown_time),
                 cost_per_replica_hour: this.getNumericValue('param-cost_per_replica_hour', DEFAULT_CONFIG.advanced.cost_per_replica_hour),
-                random_seed: this.getNumericValue('param-random_seed', DEFAULT_CONFIG.advanced.random_seed),
+            },
+            chaos: {
+                pod_failure_rate: this.getNumericValue('param-pod_failure_rate', DEFAULT_CONFIG.chaos.pod_failure_rate),
+                random_seed: this.getNumericValue('param-random_seed', DEFAULT_CONFIG.chaos.random_seed),
+                failure_events: this.getFailureEvents(),
             },
             traffic: this.getTrafficConfig(),
         };
@@ -86,10 +91,12 @@ export class UIControls {
         this.setNumericValue('param-node_provisioning_time', config.advanced.node_provisioning_time);
         this.setNumericValue('param-cluster_node_capacity', config.advanced.cluster_node_capacity);
         this.setNumericValue('param-pods_per_node', config.advanced.pods_per_node);
-        this.setNumericValue('param-pod_failure_rate', config.advanced.pod_failure_rate);
         this.setNumericValue('param-graceful_shutdown_time', config.advanced.graceful_shutdown_time);
         this.setNumericValue('param-cost_per_replica_hour', config.advanced.cost_per_replica_hour);
-        this.setNumericValue('param-random_seed', config.advanced.random_seed);
+        // Chaos
+        this.setNumericValue('param-pod_failure_rate', config.chaos.pod_failure_rate);
+        this.setNumericValue('param-random_seed', config.chaos.random_seed);
+        this.setFailureEvents(config.chaos.failure_events);
         // Traffic
         this.setTrafficConfig(config.traffic);
         this.updatePreview();
@@ -299,6 +306,7 @@ export class UIControls {
                         ...preset.config,
                         scaling: { ...DEFAULT_CONFIG.scaling, ...(preset.config.scaling || {}) },
                         advanced: { ...DEFAULT_CONFIG.advanced, ...(preset.config.advanced || {}) },
+                        chaos: { ...DEFAULT_CONFIG.chaos, ...(preset.config.chaos || {}) },
                         simulation: { ...DEFAULT_CONFIG.simulation, ...(preset.config.simulation || {}) },
                         traffic: preset.config.traffic || DEFAULT_CONFIG.traffic,
                     };
@@ -326,6 +334,85 @@ export class UIControls {
                 this.updatePreview();
             });
         }
+    }
+    bindChaosToggle() {
+        const toggle = document.getElementById('chaos-toggle');
+        const content = document.getElementById('chaos-content');
+        if (toggle && content) {
+            toggle.addEventListener('click', () => {
+                content.classList.toggle('collapsed');
+                toggle.classList.toggle('expanded');
+                const isExpanded = !content.classList.contains('collapsed');
+                toggle.setAttribute('aria-expanded', String(isExpanded));
+                const arrow = toggle.querySelector('.toggle-arrow');
+                if (arrow) {
+                    arrow.textContent = isExpanded ? '\u25BC' : '\u25B6';
+                }
+            });
+        }
+    }
+    bindFailureEventControls() {
+        const addBtn = document.getElementById('add-failure-event-btn');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                this.addFailureEventRow(60, 1);
+                this.notifyChange();
+            });
+        }
+    }
+    getFailureEvents() {
+        const container = document.getElementById('failure-events-container');
+        if (!container)
+            return [];
+        const events = [];
+        const rows = container.querySelectorAll('.failure-event-row');
+        rows.forEach(row => {
+            const timeInput = row.querySelector('.failure-time');
+            const countInput = row.querySelector('.failure-count');
+            if (timeInput && countInput) {
+                events.push({
+                    time: parseFloat(timeInput.value) || 0,
+                    count: parseFloat(countInput.value) || 1,
+                });
+            }
+        });
+        return events;
+    }
+    setFailureEvents(events) {
+        const container = document.getElementById('failure-events-container');
+        if (!container)
+            return;
+        container.innerHTML = '';
+        for (const evt of events) {
+            this.addFailureEventRow(evt.time, evt.count);
+        }
+    }
+    addFailureEventRow(time = 60, count = 1) {
+        const container = document.getElementById('failure-events-container');
+        if (!container)
+            return;
+        const row = document.createElement('div');
+        row.className = 'failure-event-row';
+        row.innerHTML = `
+      <label>At:</label>
+      <input type="number" class="failure-time" value="${time}" min="0" max="86400" aria-label="Failure event time" title="Seconds into the simulation when pods are killed">
+      <span class="unit">s</span>
+      <label>Kill:</label>
+      <input type="number" class="failure-count" value="${count}" min="1" max="100" aria-label="Number of pods to kill" title="Number of running pods to kill at this time">
+      <span class="unit">pods</span>
+      <button class="remove-step-btn" title="Remove this failure event" aria-label="Remove failure event">&times;</button>
+    `;
+        const removeBtn = row.querySelector('.remove-step-btn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+                row.remove();
+                this.notifyChange();
+            });
+        }
+        row.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => this.notifyChange());
+        });
+        container.appendChild(row);
     }
     addStepRow(rps = 100, duration = 120) {
         const container = document.getElementById('steps-container');

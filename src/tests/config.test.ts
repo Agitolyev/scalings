@@ -6,6 +6,7 @@ import {
   DEFAULT_CONFIG,
   DEFAULT_SCALING,
   DEFAULT_ADVANCED,
+  DEFAULT_CHAOS,
   DEFAULT_SIMULATION,
   SpikeParams,
   SteadyParams,
@@ -101,15 +102,35 @@ describe('ConfigService — YAML round-trip', () => {
         node_provisioning_time: 60,
         cluster_node_capacity: 50,
         pods_per_node: 8,
-        pod_failure_rate: 1,
         graceful_shutdown_time: 20,
         cost_per_replica_hour: 0.10,
-        random_seed: 0,
       },
     });
     const yaml = svc.export(config);
     const imported = svc.import(yaml);
     assert.deepStrictEqual(imported.advanced, config.advanced);
+  });
+
+  it('preserves chaos config with failure events', () => {
+    const config = makeConfig({
+      chaos: {
+        pod_failure_rate: 2.5,
+        random_seed: 42,
+        failure_events: [
+          { time: 60, count: 3 },
+          { time: 180, count: 5 },
+        ],
+      },
+    });
+    const yaml = svc.export(config);
+    const imported = svc.import(yaml);
+    assert.equal(imported.chaos.pod_failure_rate, 2.5);
+    assert.equal(imported.chaos.random_seed, 42);
+    assert.equal(imported.chaos.failure_events.length, 2);
+    assert.equal(imported.chaos.failure_events[0].time, 60);
+    assert.equal(imported.chaos.failure_events[0].count, 3);
+    assert.equal(imported.chaos.failure_events[1].time, 180);
+    assert.equal(imported.chaos.failure_events[1].count, 5);
   });
 });
 
@@ -132,6 +153,7 @@ describe('ConfigService — YAML export format', () => {
     assert.ok(yaml.includes('simulation:'));
     assert.ok(yaml.includes('scaling:'));
     assert.ok(yaml.includes('advanced:'));
+    assert.ok(yaml.includes('chaos:'));
     assert.ok(yaml.includes('traffic:'));
   });
 });

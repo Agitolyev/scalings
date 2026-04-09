@@ -22,10 +22,17 @@ export interface AdvancedParams {
     node_provisioning_time: number;
     cluster_node_capacity: number;
     pods_per_node: number;
-    pod_failure_rate: number;
     graceful_shutdown_time: number;
     cost_per_replica_hour: number;
+}
+export interface FailureEvent {
+    time: number;
+    count: number;
+}
+export interface ChaosConfig {
+    pod_failure_rate: number;
     random_seed: number;
+    failure_events: FailureEvent[];
 }
 export interface SteadyParams {
     rps: number;
@@ -72,6 +79,7 @@ export interface SimulationConfig {
     simulation: SimulationParams;
     scaling: ScalingParams;
     advanced: AdvancedParams;
+    chaos: ChaosConfig;
     traffic: TrafficConfig;
 }
 export interface TargetConfig {
@@ -142,6 +150,7 @@ export interface PresetScenario {
 }
 export declare const DEFAULT_SCALING: ScalingParams;
 export declare const DEFAULT_ADVANCED: AdvancedParams;
+export declare const DEFAULT_CHAOS: ChaosConfig;
 export declare const DEFAULT_SIMULATION: SimulationParams;
 export declare const DEFAULT_TRAFFIC: TrafficConfig;
 export declare const DEFAULT_CONFIG: SimulationConfig;

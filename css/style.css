@@ -213,6 +213,11 @@ header {
   padding: 0.75rem var(--card-padding);
 }
 
+.card.red-border {
+  border-left: 3px solid var(--red-dim);
+  padding: 0.75rem var(--card-padding);
+}
+
 /* --- Fieldset & Legend --- */
 fieldset {
   border: 1px solid var(--border-subtle);
@@ -229,6 +234,10 @@ legend {
   text-transform: none;
   letter-spacing: 0;
   padding: 0 0.5rem;
+}
+
+.red-border legend {
+  color: var(--red);
 }
 
 /* --- Parameter Rows --- */
@@ -937,6 +946,38 @@ button:active, .btn:active {
 
 .docs-content li {
   margin-bottom: 0.3rem;
+}
+
+/* --- Chaos: Failure Events --- */
+.failure-events-section {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.failure-events-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--red);
+  margin-right: 0.5rem;
+}
+
+.failure-event-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.failure-event-row label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  min-width: 30px;
+}
+
+.failure-event-row input {
+  width: 80px;
 }
 
 /* --- Step Rows (Traffic) --- */
