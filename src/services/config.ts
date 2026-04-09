@@ -122,6 +122,7 @@ export class LocalConfigService implements ConfigService {
       cooldown_scale_down: this.num(obj.cooldown_scale_down, d.cooldown_scale_down),
       node_provisioning_time: this.num(obj.node_provisioning_time, d.node_provisioning_time),
       cluster_node_capacity: this.num(obj.cluster_node_capacity, d.cluster_node_capacity),
+      pods_per_node: this.num(obj.pods_per_node, d.pods_per_node),
       pod_failure_rate: this.num(obj.pod_failure_rate, d.pod_failure_rate),
       graceful_shutdown_time: this.num(obj.graceful_shutdown_time, d.graceful_shutdown_time),
       cost_per_replica_hour: this.num(obj.cost_per_replica_hour, d.cost_per_replica_hour),
@@ -179,6 +180,7 @@ export class LocalConfigService implements ConfigService {
     lines.push(`  cooldown_scale_down: ${config.advanced.cooldown_scale_down}`);
     lines.push(`  node_provisioning_time: ${config.advanced.node_provisioning_time}`);
     lines.push(`  cluster_node_capacity: ${config.advanced.cluster_node_capacity}`);
+    lines.push(`  pods_per_node: ${config.advanced.pods_per_node}`);
     lines.push(`  pod_failure_rate: ${config.advanced.pod_failure_rate}`);
     lines.push(`  graceful_shutdown_time: ${config.advanced.graceful_shutdown_time}`);
     lines.push(`  cost_per_replica_hour: ${config.advanced.cost_per_replica_hour}`);

@@ -286,10 +286,16 @@
           </div>
 
           <div class="param-row">
-            <label for="param-cluster_node_capacity" title="Max pods per node">Cluster Node Capacity</label>
-            <input type="number" id="param-cluster_node_capacity" min="1" max="100" value="20" aria-label="Cluster node capacity value" title="Max pods that fit on existing nodes before a new node is needed">
+            <label for="param-cluster_node_capacity" title="Max nodes in cluster">Max Nodes</label>
+            <input type="number" id="param-cluster_node_capacity" min="1" max="1000" value="20" aria-label="Max nodes in cluster" title="Maximum number of nodes in the cluster">
             <span class="unit"></span>
-            <button class="tooltip-btn" data-tooltip="Max pods that can fit on existing nodes before a new node needs to be provisioned.">?</button>
+            <button class="tooltip-btn" data-tooltip="Maximum number of worker nodes the cluster can have.">?</button>
+          </div>
+          <div class="param-row">
+            <label for="param-pods_per_node" title="Max pods per node">Pods per Node</label>
+            <input type="number" id="param-pods_per_node" min="1" max="500" value="10" aria-label="Pods per node" title="Maximum pods that fit on a single node">
+            <span class="unit"></span>
+            <button class="tooltip-btn" data-tooltip="How many pods can fit on a single node before a new node needs to be provisioned.">?</button>
           </div>
 
           <div class="param-row">
@@ -442,7 +448,8 @@
           <li><code>metric_observation_delay</code> — Lag before autoscaler detects changes (default: 15s)</li>
           <li><code>cooldown_scale_up</code> / <code>cooldown_scale_down</code> — Stabilization windows</li>
           <li><code>node_provisioning_time</code> — Time to spin up a new node (default: 120s, 0=pre-provisioned)</li>
-          <li><code>cluster_node_capacity</code> — Max pods per node before new node needed (default: 20)</li>
+          <li><code>cluster_node_capacity</code> — Max nodes in the cluster (default: 20)</li>
+          <li><code>pods_per_node</code> — Max pods that fit on a single node (default: 10)</li>
           <li><code>pod_failure_rate</code> — Random failure percentage per tick, 0-100 (default: 0)</li>
           <li><code>graceful_shutdown_time</code> — Seconds a terminating pod keeps serving (default: 10s)</li>
           <li><code>scale_up_step</code> / <code>scale_down_step</code> — Pods added/removed per event (default: 1)</li>
@@ -482,6 +489,7 @@ advanced:
   cooldown_scale_down: 300
   node_provisioning_time: 120
   cluster_node_capacity: 20
+  pods_per_node: 10
   pod_failure_rate: 0
   graceful_shutdown_time: 10
   cost_per_replica_hour: 0.05

@@ -18,6 +18,7 @@ export const DEFAULT_ADVANCED = {
     cooldown_scale_down: 300,
     node_provisioning_time: 120,
     cluster_node_capacity: 20,
+    pods_per_node: 10,
     pod_failure_rate: 0,
     graceful_shutdown_time: 10,
     cost_per_replica_hour: 0.05,

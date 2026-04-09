@@ -109,10 +109,13 @@ export class LocalSimulationService implements SimulationService {
         && allPodsCount < scaling.max_replicas) {
         const podsToAdd = Math.min(scaling.scale_up_step, scaling.max_replicas - allPodsCount);
         for (let i = 0; i < podsToAdd; i++) {
-          // Check if we need node provisioning
+          // Check if we need node provisioning (new node when pods exceed current node capacity)
           let startupDelay = scaling.startup_time;
-          const currentNodePods = totalPodsEverScheduled % advanced.cluster_node_capacity;
-          if (currentNodePods === 0 && totalPodsEverScheduled > 0 && advanced.node_provisioning_time > 0) {
+          const currentNodePods = totalPodsEverScheduled % advanced.pods_per_node;
+          const nodesUsed = Math.ceil(totalPodsEverScheduled / advanced.pods_per_node);
+          if (currentNodePods === 0 && totalPodsEverScheduled > 0
+            && advanced.node_provisioning_time > 0
+            && nodesUsed < advanced.cluster_node_capacity) {
             startupDelay += advanced.node_provisioning_time;
           }
           pods.push({

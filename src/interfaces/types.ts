@@ -33,7 +33,8 @@ export interface AdvancedParams {
   cooldown_scale_up: number;          // seconds
   cooldown_scale_down: number;        // seconds
   node_provisioning_time: number;     // seconds (0 = pre-provisioned)
-  cluster_node_capacity: number;      // max pods before new node needed
+  cluster_node_capacity: number;      // max nodes in the cluster
+  pods_per_node: number;              // max pods that fit on one node
   pod_failure_rate: number;           // 0-100 percent probability per tick
   graceful_shutdown_time: number;     // seconds
   cost_per_replica_hour: number;      // USD
@@ -205,6 +206,7 @@ export const DEFAULT_ADVANCED: AdvancedParams = {
   cooldown_scale_down: 300,
   node_provisioning_time: 120,
   cluster_node_capacity: 20,
+  pods_per_node: 10,
   pod_failure_rate: 0,
   graceful_shutdown_time: 10,
   cost_per_replica_hour: 0.05,

@@ -21,6 +21,7 @@ export interface AdvancedParams {
     cooldown_scale_down: number;
     node_provisioning_time: number;
     cluster_node_capacity: number;
+    pods_per_node: number;
     pod_failure_rate: number;
     graceful_shutdown_time: number;
     cost_per_replica_hour: number;
