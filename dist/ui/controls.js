@@ -95,11 +95,6 @@ export class UIControls {
         const pattern = this.currentPattern;
         let params;
         switch (pattern) {
-            case 'steady':
-                params = {
-                    rps: this.getNumericValue('traffic-steady-rps', 500),
-                };
-                break;
             case 'gradual':
                 params = {
                     start_rps: this.getNumericValue('traffic-gradual-start_rps', 50),
@@ -141,11 +136,6 @@ export class UIControls {
             radio.checked = true;
         this.showPatternParams(traffic.pattern);
         switch (traffic.pattern) {
-            case 'steady': {
-                const p = traffic.params;
-                this.setNumericValue('traffic-steady-rps', p.rps);
-                break;
-            }
             case 'gradual': {
                 const p = traffic.params;
                 this.setNumericValue('traffic-gradual-start_rps', p.start_rps);
@@ -225,36 +215,25 @@ export class UIControls {
     }
     // --- DOM bindings ---
     bindSliders() {
-        const sliders = document.querySelectorAll('input[type="range"].neon-slider');
-        sliders.forEach(slider => {
-            const rangeInput = slider;
-            const numberId = rangeInput.id + '-num';
-            const numberInput = document.getElementById(numberId);
-            if (numberInput) {
-                rangeInput.addEventListener('input', () => {
-                    numberInput.value = rangeInput.value;
-                    this.notifyChange();
-                    this.updatePreview();
-                });
-                numberInput.addEventListener('input', () => {
-                    rangeInput.value = numberInput.value;
-                    this.notifyChange();
-                    this.updatePreview();
-                });
-                numberInput.addEventListener('change', () => {
-                    // Clamp to range
-                    const min = parseFloat(rangeInput.min);
-                    const max = parseFloat(rangeInput.max);
-                    let val = parseFloat(numberInput.value);
-                    if (isNaN(val))
-                        val = parseFloat(rangeInput.value);
+        // Bind all number inputs in param rows
+        const numberInputs = document.querySelectorAll('.param-row input[type="number"]');
+        numberInputs.forEach(input => {
+            input.addEventListener('input', () => {
+                this.notifyChange();
+                this.updatePreview();
+            });
+            input.addEventListener('change', () => {
+                const el = input;
+                const min = parseFloat(el.min);
+                const max = parseFloat(el.max);
+                let val = parseFloat(el.value);
+                if (!isNaN(min) && !isNaN(max) && !isNaN(val)) {
                     val = Math.max(min, Math.min(max, val));
-                    numberInput.value = val.toString();
-                    rangeInput.value = val.toString();
-                    this.notifyChange();
-                    this.updatePreview();
-                });
-            }
+                    el.value = val.toString();
+                }
+                this.notifyChange();
+                this.updatePreview();
+            });
         });
         // Also bind standalone number inputs (sim duration, tick interval)
         ['sim-duration', 'sim-tick'].forEach(id => {
@@ -415,12 +394,6 @@ export class UIControls {
         return el ? el.value : '';
     }
     getNumericValue(id, fallback) {
-        // Try number input first (id-num), then slider
-        const numEl = document.getElementById(id + '-num');
-        if (numEl) {
-            const val = parseFloat(numEl.value);
-            return isNaN(val) ? fallback : val;
-        }
         const el = document.getElementById(id);
         if (el) {
             const val = parseFloat(el.value);
@@ -439,13 +412,9 @@ export class UIControls {
             el.value = value;
     }
     setNumericValue(id, value) {
-        const slider = document.getElementById(id);
-        const num = document.getElementById(id + '-num');
-        const strVal = value.toString();
-        if (slider)
-            slider.value = strVal;
-        if (num)
-            num.value = strVal;
+        const el = document.getElementById(id);
+        if (el)
+            el.value = value.toString();
     }
 }
 //# sourceMappingURL=controls.js.map

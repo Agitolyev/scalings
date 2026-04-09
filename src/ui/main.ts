@@ -104,6 +104,32 @@ class App {
       });
     }
 
+    // Traffic toggle
+    const trafficToggle = document.getElementById('traffic-toggle');
+    const trafficContent = document.getElementById('traffic-content');
+    const trafficPreview = document.querySelector('#traffic-section .traffic-preview');
+    const toggleTraffic = () => {
+      if (!trafficToggle || !trafficContent) return;
+      trafficContent.classList.toggle('collapsed');
+      trafficToggle.classList.toggle('expanded');
+      const arrow = trafficToggle.querySelector('.toggle-arrow');
+      if (arrow) {
+        arrow.textContent = trafficContent.classList.contains('collapsed') ? '\u25B6' : '\u25BC';
+      }
+      if (trafficPreview) {
+        trafficPreview.classList.toggle('expanded', !trafficContent.classList.contains('collapsed'));
+      }
+    };
+    if (trafficToggle) trafficToggle.addEventListener('click', toggleTraffic);
+    // Clicking the preview mini-chart also opens the traffic editor
+    if (trafficPreview) {
+      trafficPreview.addEventListener('click', () => {
+        if (trafficContent && trafficContent.classList.contains('collapsed')) {
+          toggleTraffic();
+        }
+      });
+    }
+
     // Docs toggle
     const docsToggle = document.getElementById('docs-toggle');
     const docsContent = document.getElementById('docs-content');

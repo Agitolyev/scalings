@@ -7,7 +7,6 @@ import {
   Platform,
   TrafficPatternType,
   TrafficConfig,
-  SteadyParams,
   GradualParams,
   SpikeParams,
   WaveParams,
@@ -132,11 +131,6 @@ export class UIControls {
     let params: TrafficConfig['params'];
 
     switch (pattern) {
-      case 'steady':
-        params = {
-          rps: this.getNumericValue('traffic-steady-rps', 500),
-        } as SteadyParams;
-        break;
       case 'gradual':
         params = {
           start_rps: this.getNumericValue('traffic-gradual-start_rps', 50),
@@ -182,11 +176,6 @@ export class UIControls {
     this.showPatternParams(traffic.pattern);
 
     switch (traffic.pattern) {
-      case 'steady': {
-        const p = traffic.params as SteadyParams;
-        this.setNumericValue('traffic-steady-rps', p.rps);
-        break;
-      }
       case 'gradual': {
         const p = traffic.params as GradualParams;
         this.setNumericValue('traffic-gradual-start_rps', p.start_rps);
@@ -269,38 +258,25 @@ export class UIControls {
   // --- DOM bindings ---
 
   private bindSliders(): void {
-    const sliders = document.querySelectorAll('input[type="range"].neon-slider');
-    sliders.forEach(slider => {
-      const rangeInput = slider as HTMLInputElement;
-      const numberId = rangeInput.id + '-num';
-      const numberInput = document.getElementById(numberId) as HTMLInputElement;
-
-      if (numberInput) {
-        rangeInput.addEventListener('input', () => {
-          numberInput.value = rangeInput.value;
-          this.notifyChange();
-          this.updatePreview();
-        });
-
-        numberInput.addEventListener('input', () => {
-          rangeInput.value = numberInput.value;
-          this.notifyChange();
-          this.updatePreview();
-        });
-
-        numberInput.addEventListener('change', () => {
-          // Clamp to range
-          const min = parseFloat(rangeInput.min);
-          const max = parseFloat(rangeInput.max);
-          let val = parseFloat(numberInput.value);
-          if (isNaN(val)) val = parseFloat(rangeInput.value);
+    // Bind all number inputs in param rows
+    const numberInputs = document.querySelectorAll('.param-row input[type="number"]');
+    numberInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        this.notifyChange();
+        this.updatePreview();
+      });
+      input.addEventListener('change', () => {
+        const el = input as HTMLInputElement;
+        const min = parseFloat(el.min);
+        const max = parseFloat(el.max);
+        let val = parseFloat(el.value);
+        if (!isNaN(min) && !isNaN(max) && !isNaN(val)) {
           val = Math.max(min, Math.min(max, val));
-          numberInput.value = val.toString();
-          rangeInput.value = val.toString();
-          this.notifyChange();
-          this.updatePreview();
-        });
-      }
+          el.value = val.toString();
+        }
+        this.notifyChange();
+        this.updatePreview();
+      });
     });
 
     // Also bind standalone number inputs (sim duration, tick interval)
@@ -478,12 +454,6 @@ export class UIControls {
   }
 
   private getNumericValue(id: string, fallback: number): number {
-    // Try number input first (id-num), then slider
-    const numEl = document.getElementById(id + '-num') as HTMLInputElement;
-    if (numEl) {
-      const val = parseFloat(numEl.value);
-      return isNaN(val) ? fallback : val;
-    }
     const el = document.getElementById(id) as HTMLInputElement;
     if (el) {
       const val = parseFloat(el.value);
@@ -503,10 +473,7 @@ export class UIControls {
   }
 
   private setNumericValue(id: string, value: number): void {
-    const slider = document.getElementById(id) as HTMLInputElement;
-    const num = document.getElementById(id + '-num') as HTMLInputElement;
-    const strVal = value.toString();
-    if (slider) slider.value = strVal;
-    if (num) num.value = strVal;
+    const el = document.getElementById(id) as HTMLInputElement;
+    if (el) el.value = value.toString();
   }
 }
