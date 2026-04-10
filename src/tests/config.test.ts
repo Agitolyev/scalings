@@ -163,7 +163,7 @@ describe('ConfigService — YAML round-trip', () => {
     assert.equal(imported.broker.max_size, 1000);
   });
 
-  it('preserves saturation and broker config', () => {
+  it('preserves saturation, broker, and client config', () => {
     const config = makeConfig({
       broker: {
         enabled: true,
@@ -175,8 +175,7 @@ describe('ConfigService — YAML round-trip', () => {
         saturation_threshold: 85,
         max_capacity_reduction: 0.4,
       },
-      producer: {
-        ...DEFAULT_PRODUCER,
+      client: {
         retry_rate: 0.3,
       },
     });
@@ -187,7 +186,7 @@ describe('ConfigService — YAML round-trip', () => {
     assert.equal(imported.broker.request_timeout_ms, 10000);
     assert.equal(imported.service.saturation_threshold, 85);
     assert.equal(imported.service.max_capacity_reduction, 0.4);
-    assert.equal(imported.producer.retry_rate, 0.3);
+    assert.equal(imported.client.retry_rate, 0.3);
   });
 
   it('preserves chaos config with failure events', () => {

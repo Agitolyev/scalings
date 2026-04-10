@@ -17,11 +17,16 @@ export interface SimulationParams {
   tick_interval: number;  // seconds
 }
 
-// --- Producer: generates traffic, retries failures ---
+// --- Producer: generates traffic ---
 
 export interface ProducerConfig {
-  retry_rate: number;         // 0-1 fraction of dropped/expired requests that retry next tick
   traffic: TrafficConfig;
+}
+
+// --- Client: resilience behavior (retries, etc.) ---
+
+export interface ClientConfig {
+  retry_rate: number;         // 0-1 fraction of dropped/expired requests that retry next tick
 }
 
 // --- Broker: optional message queue between producer and service ---
@@ -125,6 +130,7 @@ export interface SimulationConfig {
   platform: Platform;
   simulation: SimulationParams;
   producer: ProducerConfig;
+  client: ClientConfig;
   broker: BrokerConfig;
   service: ServiceConfig;
 }
@@ -243,8 +249,11 @@ export const DEFAULT_TRAFFIC: TrafficConfig = {
 };
 
 export const DEFAULT_PRODUCER: ProducerConfig = {
-  retry_rate: 0,
   traffic: DEFAULT_TRAFFIC,
+};
+
+export const DEFAULT_CLIENT: ClientConfig = {
+  retry_rate: 0,
 };
 
 export const DEFAULT_BROKER: BrokerConfig = {
@@ -287,6 +296,7 @@ export const DEFAULT_CONFIG: SimulationConfig = {
   platform: 'kubernetes-hpa',
   simulation: DEFAULT_SIMULATION,
   producer: DEFAULT_PRODUCER,
+  client: DEFAULT_CLIENT,
   broker: DEFAULT_BROKER,
   service: DEFAULT_SERVICE,
 };
@@ -443,11 +453,13 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
       },
       producer: {
         ...DEFAULT_PRODUCER,
-        retry_rate: 0.3,
         traffic: {
           pattern: 'spike',
           params: { base_rps: 200, spike_rps: 1500, spike_start: 30, spike_duration: 60 } as SpikeParams,
         },
+      },
+      client: {
+        retry_rate: 0.3,
       },
       broker: {
         enabled: true,

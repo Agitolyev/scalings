@@ -20,9 +20,9 @@ const config = {
   ...DEFAULT_CONFIG,
   service: { ...DEFAULT_CONFIG.service, min_replicas: 5, max_replicas: 50 },
   producer: {
-    retry_rate: 0,
     traffic: { pattern: 'spike', params: { base_rps: 200, spike_rps: 2000, spike_start: 60, spike_duration: 30 } },
   },
+  client: { retry_rate: 0 },
   broker: { enabled: true, max_size: 0, request_timeout_ms: 0 },  // unlimited broker
 };
 
@@ -77,7 +77,7 @@ src/
 ### Interface Separation
 - Define service contracts as interfaces in `types.ts`, implement in `services/`
 - UI depends on interfaces, not concrete classes
-- Config is organized around three entities: `ProducerConfig` (traffic, retries), `BrokerConfig` (optional queue middleware), `ServiceConfig` (pod fleet, scaling, backpressure, chaos)
+- Config is organized around four entities: `ProducerConfig` (traffic), `ClientConfig` (retries/resilience), `BrokerConfig` (optional queue middleware), `ServiceConfig` (pod fleet, scaling, saturation, chaos)
 
 ### Simulation Extensibility
 - The simulation loop processes one tick at a time: failures → state updates → capacity → autoscaler → overflow → cost → snapshot
@@ -101,7 +101,7 @@ src/
 
 ## Adding a New Feature (Checklist)
 
-1. **types.ts**: Add fields to `ProducerConfig`, `BrokerConfig`, or `ServiceConfig` as appropriate. Add fields to `TickSnapshot`/`SimulationSummary` if needed. Update defaults.
+1. **types.ts**: Add fields to `ProducerConfig`, `ClientConfig`, `BrokerConfig`, or `ServiceConfig` as appropriate. Add fields to `TickSnapshot`/`SimulationSummary` if needed. Update defaults.
 2. **simulation.ts**: Add logic to the tick loop or extract into a private method
 3. **index.html**: Add UI controls (inputs, toggles)
 4. **controls.ts**: Add `get`/`set` methods, bind events, include in `getConfig()`/`setConfig()`

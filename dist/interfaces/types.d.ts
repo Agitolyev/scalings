@@ -6,8 +6,10 @@ export interface SimulationParams {
     tick_interval: number;
 }
 export interface ProducerConfig {
-    retry_rate: number;
     traffic: TrafficConfig;
+}
+export interface ClientConfig {
+    retry_rate: number;
 }
 export interface BrokerConfig {
     enabled: boolean;
@@ -85,6 +87,7 @@ export interface SimulationConfig {
     platform: Platform;
     simulation: SimulationParams;
     producer: ProducerConfig;
+    client: ClientConfig;
     broker: BrokerConfig;
     service: ServiceConfig;
 }
@@ -168,6 +171,7 @@ export interface PresetScenario {
 export declare const DEFAULT_SIMULATION: SimulationParams;
 export declare const DEFAULT_TRAFFIC: TrafficConfig;
 export declare const DEFAULT_PRODUCER: ProducerConfig;
+export declare const DEFAULT_CLIENT: ClientConfig;
 export declare const DEFAULT_BROKER: BrokerConfig;
 export declare const DEFAULT_SERVICE: ServiceConfig;
 export declare const DEFAULT_CONFIG: SimulationConfig;

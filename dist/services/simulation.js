@@ -17,7 +17,7 @@ export class LocalSimulationService {
         };
     }
     async run(config) {
-        const { simulation, producer, broker, service } = config;
+        const { simulation, producer, client, broker, service } = config;
         const totalTicks = Math.ceil(simulation.duration / simulation.tick_interval);
         // Generate traffic pattern
         const trafficData = this.trafficService.generate(producer.traffic, simulation.duration, simulation.tick_interval);
@@ -224,10 +224,10 @@ export class LocalSimulationService {
                 : 0;
             // --- Schedule retries for next tick ---
             const retriable = dropped + expired;
-            if (producer.retry_rate > 0 && retriable > 0) {
-                pendingRetries = Math.round(retriable * producer.retry_rate);
+            if (client.retry_rate > 0 && retriable > 0) {
+                pendingRetries = Math.round(retriable * client.retry_rate);
                 if (pendingRetries > 0) {
-                    logEntries.push(`${pendingRetries} requests will retry next tick (${(producer.retry_rate * 100).toFixed(0)}% retry rate)`);
+                    logEntries.push(`${pendingRetries} requests will retry next tick (${(client.retry_rate * 100).toFixed(0)}% retry rate)`);
                 }
             }
             // Log drop transitions

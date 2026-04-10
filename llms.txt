@@ -23,11 +23,13 @@ The config parameter is a base64-encoded JSON object matching the SimulationConf
   "platform": "kubernetes-hpa",
   "simulation": { "duration": 600, "tick_interval": 1 },
   "producer": {
-    "retry_rate": 0,
     "traffic": {
       "pattern": "spike",
       "params": { "base_rps": 200, "spike_rps": 2000, "spike_start": 120, "spike_duration": 60 }
     }
+  },
+  "client": {
+    "retry_rate": 0
   },
   "broker": {
     "enabled": false,
@@ -52,13 +54,16 @@ The config parameter is a base64-encoded JSON object matching the SimulationConf
 
 ## Config entities
 
-The config is organized around three entities:
+The config is organized around four entities:
 
 ### Producer
-Generates traffic and handles retry behavior.
-- `retry_rate` (0-1): Fraction of dropped/expired requests that retry next tick. Models retry storms.
+Generates traffic.
 - `traffic.pattern`: One of steady, gradual, spike, wave, step, custom.
 - `traffic.params`: Pattern-specific parameters (see below).
+
+### Client
+Client-side resilience behavior (reactive to failures).
+- `retry_rate` (0-1): Fraction of dropped/expired requests that retry next tick. Models retry storms.
 
 ### Broker (optional)
 A message queue between producer and service (like SQS, Kafka, or a buffering load balancer).

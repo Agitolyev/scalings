@@ -16,8 +16,10 @@ export const DEFAULT_TRAFFIC = {
     },
 };
 export const DEFAULT_PRODUCER = {
-    retry_rate: 0,
     traffic: DEFAULT_TRAFFIC,
+};
+export const DEFAULT_CLIENT = {
+    retry_rate: 0,
 };
 export const DEFAULT_BROKER = {
     enabled: false,
@@ -57,6 +59,7 @@ export const DEFAULT_CONFIG = {
     platform: 'kubernetes-hpa',
     simulation: DEFAULT_SIMULATION,
     producer: DEFAULT_PRODUCER,
+    client: DEFAULT_CLIENT,
     broker: DEFAULT_BROKER,
     service: DEFAULT_SERVICE,
 };
@@ -212,11 +215,13 @@ export const PRESET_SCENARIOS = [
             },
             producer: {
                 ...DEFAULT_PRODUCER,
-                retry_rate: 0.3,
                 traffic: {
                     pattern: 'spike',
                     params: { base_rps: 200, spike_rps: 1500, spike_start: 30, spike_duration: 60 },
                 },
+            },
+            client: {
+                retry_rate: 0.3,
             },
             broker: {
                 enabled: true,

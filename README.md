@@ -86,9 +86,10 @@ src/
 
 ### Config structure
 
-The config is organized around three entities:
+The config is organized around four entities:
 
-- **Producer** — traffic pattern + retry behavior
+- **Producer** — traffic pattern (steady, spike, wave, etc.)
+- **Client** — resilience behavior (retry rate)
 - **Broker** — optional message queue (enabled/disabled, max size, request timeout)
 - **Service** — pod fleet with scaling, cooldowns, saturation, chaos, cost
 

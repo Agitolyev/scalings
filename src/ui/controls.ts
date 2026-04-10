@@ -8,6 +8,7 @@ import {
   TrafficPatternType,
   TrafficConfig,
   ProducerConfig,
+  ClientConfig,
   BrokerConfig,
   ServiceConfig,
   GradualParams,
@@ -70,6 +71,7 @@ export class UIControls {
         tick_interval: this.getNumericValue('sim-tick', DEFAULT_CONFIG.simulation.tick_interval),
       },
       producer: this.getProducerConfig(),
+      client: this.getClientConfig(),
       broker: this.getBrokerConfig(),
       service: this.getServiceConfig(),
     };
@@ -90,6 +92,9 @@ export class UIControls {
     // Producer
     this.setProducerConfig(config.producer);
 
+    // Client
+    this.setClientConfig(config.client);
+
     // Broker
     this.setBrokerConfig(config.broker);
 
@@ -103,14 +108,24 @@ export class UIControls {
 
   private getProducerConfig(): ProducerConfig {
     return {
-      retry_rate: this.getNumericValue('param-retry_rate', DEFAULT_CONFIG.producer.retry_rate),
       traffic: this.getTrafficConfig(),
     };
   }
 
   private setProducerConfig(producer: ProducerConfig): void {
-    this.setNumericValue('param-retry_rate', producer.retry_rate);
     this.setTrafficConfig(producer.traffic);
+  }
+
+  // --- Client config helpers ---
+
+  private getClientConfig(): ClientConfig {
+    return {
+      retry_rate: this.getNumericValue('param-retry_rate', DEFAULT_CONFIG.client.retry_rate),
+    };
+  }
+
+  private setClientConfig(client: ClientConfig): void {
+    this.setNumericValue('param-retry_rate', client.retry_rate);
   }
 
   // --- Broker config helpers ---
@@ -403,6 +418,7 @@ export class UIControls {
             ...preset.config,
             simulation: { ...DEFAULT_CONFIG.simulation, ...(preset.config.simulation || {}) },
             producer: { ...DEFAULT_CONFIG.producer, ...(preset.config.producer || {}) },
+            client: { ...DEFAULT_CONFIG.client, ...(preset.config.client || {}) },
             broker: { ...DEFAULT_CONFIG.broker, ...(preset.config.broker || {}) },
             service: { ...DEFAULT_CONFIG.service, ...(preset.config.service || {}) },
           };

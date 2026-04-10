@@ -715,7 +715,8 @@ describe('SimulationService — retry storms', () => {
         const config = makeConfig({
             simulation: { duration: 30, tick_interval: 1 },
             service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
-            producer: { ...DEFAULT_PRODUCER, retry_rate: 0.5, traffic: { pattern: 'steady', params: { rps: 500 } } },
+            producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 500 } } },
+            client: { retry_rate: 0.5 },
             broker: { ...DEFAULT_BROKER, enabled: true, max_size: 200 },
         });
         const result = await svc.run(config);
@@ -728,7 +729,8 @@ describe('SimulationService — retry storms', () => {
         const config = makeConfig({
             simulation: { duration: 20, tick_interval: 1 },
             service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
-            producer: { ...DEFAULT_PRODUCER, retry_rate: 0, traffic: { pattern: 'steady', params: { rps: 500 } } },
+            producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 500 } } },
+            client: { retry_rate: 0 },
             broker: { ...DEFAULT_BROKER, enabled: true, max_size: 200 },
         });
         const result = await svc.run(config);
@@ -740,7 +742,8 @@ describe('SimulationService — retry storms', () => {
         const config = makeConfig({
             simulation: { duration: 30, tick_interval: 1 },
             service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
-            producer: { ...DEFAULT_PRODUCER, retry_rate: 0.3, traffic: { pattern: 'steady', params: { rps: 500 } } },
+            producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 500 } } },
+            client: { retry_rate: 0.3 },
             broker: { ...DEFAULT_BROKER, enabled: true, max_size: 0, request_timeout_ms: 2000 },
         });
         const result = await svc.run(config);

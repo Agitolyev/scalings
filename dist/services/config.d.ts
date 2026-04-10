@@ -9,6 +9,7 @@ export declare class LocalConfigService implements ConfigService {
     private validateConfig;
     private validateSimulation;
     private validateProducer;
+    private validateClient;
     private validateBroker;
     private validateService;
     private validateTraffic;

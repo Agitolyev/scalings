@@ -61,6 +61,9 @@ export class LocalConfigService {
         if (obj.producer && typeof obj.producer === 'object') {
             config.producer = this.validateProducer(obj.producer);
         }
+        if (obj.client && typeof obj.client === 'object') {
+            config.client = this.validateClient(obj.client);
+        }
         if (obj.broker && typeof obj.broker === 'object') {
             config.broker = this.validateBroker(obj.broker);
         }
@@ -78,10 +81,15 @@ export class LocalConfigService {
     validateProducer(obj) {
         const d = DEFAULT_CONFIG.producer;
         return {
-            retry_rate: this.num(obj.retry_rate, d.retry_rate),
             traffic: (obj.traffic && typeof obj.traffic === 'object')
                 ? this.validateTraffic(obj.traffic)
                 : d.traffic,
+        };
+    }
+    validateClient(obj) {
+        const d = DEFAULT_CONFIG.client;
+        return {
+            retry_rate: this.num(obj.retry_rate, d.retry_rate),
         };
     }
     validateBroker(obj) {
@@ -164,11 +172,13 @@ export class LocalConfigService {
         lines.push(`  tick_interval: ${config.simulation.tick_interval}`);
         lines.push('');
         lines.push('producer:');
-        lines.push(`  retry_rate: ${config.producer.retry_rate}`);
         lines.push('  traffic:');
         lines.push(`    pattern: ${config.producer.traffic.pattern}`);
         lines.push('    params:');
         this.serializeTrafficParams(config.producer.traffic, lines);
+        lines.push('');
+        lines.push('client:');
+        lines.push(`  retry_rate: ${config.client.retry_rate}`);
         lines.push('');
         lines.push('broker:');
         lines.push(`  enabled: ${config.broker.enabled}`);

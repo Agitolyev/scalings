@@ -41,6 +41,7 @@ export class UIControls {
                 tick_interval: this.getNumericValue('sim-tick', DEFAULT_CONFIG.simulation.tick_interval),
             },
             producer: this.getProducerConfig(),
+            client: this.getClientConfig(),
             broker: this.getBrokerConfig(),
             service: this.getServiceConfig(),
         };
@@ -55,6 +56,8 @@ export class UIControls {
         this.setNumericValue('sim-tick', config.simulation.tick_interval);
         // Producer
         this.setProducerConfig(config.producer);
+        // Client
+        this.setClientConfig(config.client);
         // Broker
         this.setBrokerConfig(config.broker);
         // Service
@@ -64,13 +67,20 @@ export class UIControls {
     // --- Producer config helpers ---
     getProducerConfig() {
         return {
-            retry_rate: this.getNumericValue('param-retry_rate', DEFAULT_CONFIG.producer.retry_rate),
             traffic: this.getTrafficConfig(),
         };
     }
     setProducerConfig(producer) {
-        this.setNumericValue('param-retry_rate', producer.retry_rate);
         this.setTrafficConfig(producer.traffic);
+    }
+    // --- Client config helpers ---
+    getClientConfig() {
+        return {
+            retry_rate: this.getNumericValue('param-retry_rate', DEFAULT_CONFIG.client.retry_rate),
+        };
+    }
+    setClientConfig(client) {
+        this.setNumericValue('param-retry_rate', client.retry_rate);
     }
     // --- Broker config helpers ---
     getBrokerConfig() {
@@ -344,6 +354,7 @@ export class UIControls {
                         ...preset.config,
                         simulation: { ...DEFAULT_CONFIG.simulation, ...(preset.config.simulation || {}) },
                         producer: { ...DEFAULT_CONFIG.producer, ...(preset.config.producer || {}) },
+                        client: { ...DEFAULT_CONFIG.client, ...(preset.config.client || {}) },
                         broker: { ...DEFAULT_CONFIG.broker, ...(preset.config.broker || {}) },
                         service: { ...DEFAULT_CONFIG.service, ...(preset.config.service || {}) },
                     };

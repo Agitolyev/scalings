@@ -14,6 +14,8 @@ export declare class UIControls {
     setConfig(config: SimulationConfig): void;
     private getProducerConfig;
     private setProducerConfig;
+    private getClientConfig;
+    private setClientConfig;
     private getBrokerConfig;
     private setBrokerConfig;
     private getServiceConfig;
