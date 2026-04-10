@@ -4,6 +4,16 @@
 
 Browser-based autoscaling simulator (Kubernetes HPA, AWS ASG, GCP MIG). Pure TypeScript, no frameworks, runs 100% in the browser. All services are composable and testable via dependency injection.
 
+**This app is designed to be usable by LLMs.** An LLM should be able to understand what the simulator does, configure a scenario, run it, and interpret the results (summary stats, chart data, decision log). Keep the UI semantically clear: use descriptive labels, tooltips with concrete explanations, and structured output that's easy to parse visually or programmatically.
+
+## LLM Usability Principles
+
+- **Descriptive labels and tooltips**: Every input should have a `title` or tooltip that explains what the parameter does in concrete terms (units, valid ranges, what 0 or edge values mean). An LLM reading the page should understand each control without needing external docs.
+- **Structured results**: Summary stats use distinct IDs (`stat-total-requests`, `stat-drop-rate`, etc.). The decision log classifies entries by type (`scale-up`, `failure`, `drop`, `recover`). Chart datasets have descriptive labels (`Traffic (RPS)`, `Queue Depth`). Keep these machine-parseable.
+- **Shareable state**: The URL hash encoding (`#config=<base64>`) and YAML export mean an LLM can generate, share, or reproduce any simulation scenario without interacting with the DOM.
+- **Presets as examples**: Preset scenarios serve as worked examples an LLM can reference to understand parameter relationships. When adding presets, write the description so it explains *why* the parameter choices make sense for that scenario.
+- **Self-explanatory output**: Summary stats, log entries, and chart labels should use plain language. Avoid abbreviations or codes that require context to interpret.
+
 ## Build & Test
 
 ```bash
