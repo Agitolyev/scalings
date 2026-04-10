@@ -39,6 +39,13 @@ export interface AdvancedParams {
   cost_per_replica_hour: number;      // USD
 }
 
+// --- Queue Mode ---
+
+export interface QueueConfig {
+  enabled: boolean;
+  max_size: number;           // max queued requests (0 = unlimited)
+}
+
 // --- Chaos Engineering ---
 
 export interface FailureEvent {
@@ -113,6 +120,7 @@ export interface SimulationConfig {
   advanced: AdvancedParams;
   chaos: ChaosConfig;
   traffic: TrafficConfig;
+  queue: QueueConfig;
 }
 
 // --- Target Config: the deployable output ---
@@ -144,6 +152,7 @@ export interface TickSnapshot {
   shutting_down_pods: number;  // pods gracefully shutting down
   served_requests: number;     // requests served this tick
   dropped_requests: number;    // requests dropped this tick
+  queue_depth: number;         // requests waiting in queue
   utilization: number;         // 0-1 capacity utilization
   delayed_utilization: number; // utilization the autoscaler sees (with delay)
   estimated_cost: number;      // cumulative cost in USD
@@ -163,6 +172,7 @@ export interface SimulationSummary {
   drop_rate_percent: number;
   peak_pod_count: number;
   min_pod_count: number;
+  peak_queue_depth: number;
   time_under_provisioned_seconds: number;
   time_under_provisioned_percent: number;
   time_to_recover_seconds: number | null;  // null if no drops or never recovered
@@ -225,6 +235,11 @@ export const DEFAULT_ADVANCED: AdvancedParams = {
   cost_per_replica_hour: 0.05,
 };
 
+export const DEFAULT_QUEUE: QueueConfig = {
+  enabled: false,
+  max_size: 1000,
+};
+
 export const DEFAULT_CHAOS: ChaosConfig = {
   pod_failure_rate: 0,
   random_seed: 0,
@@ -255,6 +270,7 @@ export const DEFAULT_CONFIG: SimulationConfig = {
   advanced: DEFAULT_ADVANCED,
   chaos: DEFAULT_CHAOS,
   traffic: DEFAULT_TRAFFIC,
+  queue: DEFAULT_QUEUE,
 };
 
 export const PRESET_SCENARIOS: PresetScenario[] = [
@@ -350,6 +366,35 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
             { rps: 500, duration: 120 },
           ],
         } as StepParams,
+      },
+    },
+  },
+  {
+    name: 'Bottomless Queue',
+    description: 'Spike traffic with an unlimited queue — no requests dropped, backlog drains as capacity catches up',
+    config: {
+      name: 'Bottomless Queue',
+      scaling: {
+        ...DEFAULT_SCALING,
+        min_replicas: 2,
+        max_replicas: 50,
+        scale_up_threshold: 70,
+        scale_up_step: 4,
+        capacity_per_replica: 100,
+        startup_time: 30,
+      },
+      advanced: {
+        ...DEFAULT_ADVANCED,
+        cooldown_scale_up: 15,
+        metric_observation_delay: 10,
+      },
+      traffic: {
+        pattern: 'spike',
+        params: { base_rps: 200, spike_rps: 2000, spike_start: 60, spike_duration: 90 } as SpikeParams,
+      },
+      queue: {
+        enabled: true,
+        max_size: 0,
       },
     },
   },

@@ -19,6 +19,7 @@ export class UIControls {
         this.bindPlatformSelector();
         this.bindStepControls();
         this.bindFailureEventControls();
+        this.bindQueueToggle();
         this.showPatternParams(this.currentPattern);
         this.updatePreview();
     }
@@ -65,6 +66,7 @@ export class UIControls {
                 failure_events: this.getFailureEvents(),
             },
             traffic: this.getTrafficConfig(),
+            queue: this.getQueueConfig(),
         };
         return config;
     }
@@ -99,6 +101,8 @@ export class UIControls {
         this.setFailureEvents(config.chaos.failure_events);
         // Traffic
         this.setTrafficConfig(config.traffic);
+        // Queue
+        this.setQueueConfig(config.queue);
         this.updatePreview();
     }
     // --- Traffic config helpers ---
@@ -276,20 +280,7 @@ export class UIControls {
         });
     }
     bindAdvancedToggle() {
-        const toggle = document.getElementById('advanced-toggle');
-        const content = document.getElementById('advanced-content');
-        if (toggle && content) {
-            toggle.addEventListener('click', () => {
-                content.classList.toggle('collapsed');
-                toggle.classList.toggle('expanded');
-                const isExpanded = !content.classList.contains('collapsed');
-                toggle.setAttribute('aria-expanded', String(isExpanded));
-                const arrow = toggle.querySelector('.toggle-arrow');
-                if (arrow) {
-                    arrow.textContent = isExpanded ? '\u25BC' : '\u25B6';
-                }
-            });
-        }
+        this.bindCollapsibleSection('advanced-toggle', 'advanced-content');
     }
     bindPresets() {
         const container = document.getElementById('preset-buttons');
@@ -309,6 +300,7 @@ export class UIControls {
                         chaos: { ...DEFAULT_CONFIG.chaos, ...(preset.config.chaos || {}) },
                         simulation: { ...DEFAULT_CONFIG.simulation, ...(preset.config.simulation || {}) },
                         traffic: preset.config.traffic || DEFAULT_CONFIG.traffic,
+                        queue: { ...DEFAULT_CONFIG.queue, ...(preset.config.queue || {}) },
                     };
                     this.setConfig(fullConfig);
                     this.notifyChange();
@@ -343,8 +335,11 @@ export class UIControls {
         }
     }
     bindChaosToggle() {
-        const toggle = document.getElementById('chaos-toggle');
-        const content = document.getElementById('chaos-content');
+        this.bindCollapsibleSection('chaos-toggle', 'chaos-content');
+    }
+    bindCollapsibleSection(toggleId, contentId) {
+        const toggle = document.getElementById(toggleId);
+        const content = document.getElementById(contentId);
         if (toggle && content) {
             toggle.addEventListener('click', () => {
                 content.classList.toggle('collapsed');
@@ -366,6 +361,65 @@ export class UIControls {
                 this.notifyChange();
             });
         }
+    }
+    bindQueueToggle() {
+        const toggle = document.getElementById('queue-enabled');
+        const params = document.getElementById('queue-params');
+        if (toggle && params) {
+            toggle.addEventListener('change', () => {
+                params.classList.toggle('hidden', !toggle.checked);
+                this.notifyChange();
+            });
+        }
+        const maxSizeInput = document.getElementById('param-queue_max_size');
+        const unlimitedBtn = document.getElementById('queue-unlimited-btn');
+        if (maxSizeInput) {
+            maxSizeInput.addEventListener('input', () => {
+                this.updateQueueSizeUI(maxSizeInput);
+                this.notifyChange();
+            });
+            this.updateQueueSizeUI(maxSizeInput);
+        }
+        if (unlimitedBtn && maxSizeInput) {
+            unlimitedBtn.addEventListener('click', () => {
+                const isUnlimited = parseFloat(maxSizeInput.value) === 0;
+                maxSizeInput.value = isUnlimited ? '1000' : '0';
+                this.updateQueueSizeUI(maxSizeInput);
+                this.notifyChange();
+            });
+        }
+    }
+    updateQueueSizeUI(input) {
+        const isUnlimited = parseFloat(input.value) === 0;
+        const unit = document.getElementById('queue-size-unit');
+        if (unit) {
+            unit.textContent = isUnlimited ? '= unlimited' : 'req';
+        }
+        const btn = document.getElementById('queue-unlimited-btn');
+        if (btn) {
+            btn.classList.toggle('active', isUnlimited);
+        }
+        input.disabled = isUnlimited;
+    }
+    getQueueConfig() {
+        const toggle = document.getElementById('queue-enabled');
+        return {
+            enabled: toggle ? toggle.checked : false,
+            max_size: this.getNumericValue('param-queue_max_size', DEFAULT_CONFIG.queue.max_size),
+        };
+    }
+    setQueueConfig(queue) {
+        const toggle = document.getElementById('queue-enabled');
+        const params = document.getElementById('queue-params');
+        if (toggle) {
+            toggle.checked = queue.enabled;
+            if (params)
+                params.classList.toggle('hidden', !queue.enabled);
+        }
+        this.setNumericValue('param-queue_max_size', queue.max_size);
+        const maxSizeInput = document.getElementById('param-queue_max_size');
+        if (maxSizeInput)
+            this.updateQueueSizeUI(maxSizeInput);
     }
     getFailureEvents() {
         const container = document.getElementById('failure-events-container');

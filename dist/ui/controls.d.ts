@@ -24,7 +24,12 @@ export declare class UIControls {
     private bindPlatformSelector;
     private bindStepControls;
     private bindChaosToggle;
+    private bindCollapsibleSection;
     private bindFailureEventControls;
+    private bindQueueToggle;
+    private updateQueueSizeUI;
+    private getQueueConfig;
+    private setQueueConfig;
     private getFailureEvents;
     private setFailureEvents;
     addFailureEventRow(time?: number, count?: number): void;
