@@ -372,19 +372,34 @@ export class UIControls {
             });
         }
         const maxSizeInput = document.getElementById('param-queue_max_size');
+        const unlimitedBtn = document.getElementById('queue-unlimited-btn');
         if (maxSizeInput) {
             maxSizeInput.addEventListener('input', () => {
-                this.updateQueueSizeHint(maxSizeInput);
+                this.updateQueueSizeUI(maxSizeInput);
                 this.notifyChange();
             });
-            this.updateQueueSizeHint(maxSizeInput);
+            this.updateQueueSizeUI(maxSizeInput);
+        }
+        if (unlimitedBtn && maxSizeInput) {
+            unlimitedBtn.addEventListener('click', () => {
+                const isUnlimited = parseFloat(maxSizeInput.value) === 0;
+                maxSizeInput.value = isUnlimited ? '1000' : '0';
+                this.updateQueueSizeUI(maxSizeInput);
+                this.notifyChange();
+            });
         }
     }
-    updateQueueSizeHint(input) {
+    updateQueueSizeUI(input) {
+        const isUnlimited = parseFloat(input.value) === 0;
         const unit = document.getElementById('queue-size-unit');
         if (unit) {
-            unit.textContent = parseFloat(input.value) === 0 ? '= unlimited' : 'req';
+            unit.textContent = isUnlimited ? '= unlimited' : 'req';
         }
+        const btn = document.getElementById('queue-unlimited-btn');
+        if (btn) {
+            btn.classList.toggle('active', isUnlimited);
+        }
+        input.disabled = isUnlimited;
     }
     getQueueConfig() {
         const toggle = document.getElementById('queue-enabled');
@@ -404,7 +419,7 @@ export class UIControls {
         this.setNumericValue('param-queue_max_size', queue.max_size);
         const maxSizeInput = document.getElementById('param-queue_max_size');
         if (maxSizeInput)
-            this.updateQueueSizeHint(maxSizeInput);
+            this.updateQueueSizeUI(maxSizeInput);
     }
     getFailureEvents() {
         const container = document.getElementById('failure-events-container');

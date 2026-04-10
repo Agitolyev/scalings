@@ -27,7 +27,7 @@ export declare class UIControls {
     private bindCollapsibleSection;
     private bindFailureEventControls;
     private bindQueueToggle;
-    private updateQueueSizeHint;
+    private updateQueueSizeUI;
     private getQueueConfig;
     private setQueueConfig;
     private getFailureEvents;

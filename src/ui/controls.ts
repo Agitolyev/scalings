@@ -432,20 +432,35 @@ export class UIControls {
     }
 
     const maxSizeInput = document.getElementById('param-queue_max_size') as HTMLInputElement;
+    const unlimitedBtn = document.getElementById('queue-unlimited-btn');
     if (maxSizeInput) {
       maxSizeInput.addEventListener('input', () => {
-        this.updateQueueSizeHint(maxSizeInput);
+        this.updateQueueSizeUI(maxSizeInput);
         this.notifyChange();
       });
-      this.updateQueueSizeHint(maxSizeInput);
+      this.updateQueueSizeUI(maxSizeInput);
+    }
+    if (unlimitedBtn && maxSizeInput) {
+      unlimitedBtn.addEventListener('click', () => {
+        const isUnlimited = parseFloat(maxSizeInput.value) === 0;
+        maxSizeInput.value = isUnlimited ? '1000' : '0';
+        this.updateQueueSizeUI(maxSizeInput);
+        this.notifyChange();
+      });
     }
   }
 
-  private updateQueueSizeHint(input: HTMLInputElement): void {
+  private updateQueueSizeUI(input: HTMLInputElement): void {
+    const isUnlimited = parseFloat(input.value) === 0;
     const unit = document.getElementById('queue-size-unit');
     if (unit) {
-      unit.textContent = parseFloat(input.value) === 0 ? '= unlimited' : 'req';
+      unit.textContent = isUnlimited ? '= unlimited' : 'req';
     }
+    const btn = document.getElementById('queue-unlimited-btn');
+    if (btn) {
+      btn.classList.toggle('active', isUnlimited);
+    }
+    input.disabled = isUnlimited;
   }
 
   private getQueueConfig(): QueueConfig {
@@ -465,7 +480,7 @@ export class UIControls {
     }
     this.setNumericValue('param-queue_max_size', queue.max_size);
     const maxSizeInput = document.getElementById('param-queue_max_size') as HTMLInputElement;
-    if (maxSizeInput) this.updateQueueSizeHint(maxSizeInput);
+    if (maxSizeInput) this.updateQueueSizeUI(maxSizeInput);
   }
 
   private getFailureEvents(): FailureEvent[] {

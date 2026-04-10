@@ -306,6 +306,12 @@ header {
   display: none;
 }
 
+#queue-unlimited-btn.active {
+  background: var(--cyan);
+  color: var(--bg-primary);
+  border-color: var(--cyan);
+}
+
 /* --- Fieldset & Legend --- */
 fieldset {
   border: 1px solid var(--border-subtle);
