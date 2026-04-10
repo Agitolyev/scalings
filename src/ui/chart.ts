@@ -250,9 +250,9 @@ export class ChartRenderer {
       });
     }
 
-    // Show effective capacity line when backpressure is reducing capacity
-    const hasBackpressure = snapshots.some(s => s.effective_capacity_rps < s.capacity_rps);
-    if (hasBackpressure) {
+    // Show effective capacity line when saturation is reducing capacity
+    const hasSaturation = snapshots.some(s => s.effective_capacity_rps < s.capacity_rps);
+    if (hasSaturation) {
       datasets.push({
         label: 'Effective Capacity',
         data: preloaded ? snapshots.map(s => s.effective_capacity_rps) : ([] as number[]),

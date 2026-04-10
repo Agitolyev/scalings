@@ -646,71 +646,82 @@ describe('SimulationService — queue log entries', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Backpressure model — capacity degradation, request expiry, retries
+// Saturation model — capacity degradation under high utilization
 // ---------------------------------------------------------------------------
-describe('SimulationService — backpressure capacity degradation', () => {
-  it('reduces effective capacity when queue exceeds backpressure threshold', async () => {
+describe('SimulationService — saturation capacity degradation', () => {
+  it('reduces effective capacity when utilization exceeds saturation threshold', async () => {
+    // Traffic 150 RPS vs capacity 100 RPS = 100% utilization (capped), well above 80% threshold
     const config = makeConfig({
-      simulation: { duration: 30, tick_interval: 1 },
-      service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100, backpressure_threshold: 100, max_capacity_reduction: 0.5 },
-      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams } },
-      broker: { ...DEFAULT_BROKER, enabled: true, max_size: 0 },
+      simulation: { duration: 10, tick_interval: 1 },
+      service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100, saturation_threshold: 80, max_capacity_reduction: 0.5 },
+      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 150 } as SteadyParams } },
     });
     const result = await svc.run(config);
 
-    // Queue grows, so effective capacity should eventually drop below base capacity
+    // Utilization is capped at 100%, which exceeds 80% threshold, so capacity degrades
     const degradedTicks = result.snapshots.filter(s => s.effective_capacity_rps < s.capacity_rps);
     assert.ok(degradedTicks.length > 0, 'should have ticks where effective capacity < base capacity');
 
-    // Effective capacity should be lower when queue is deeper
     const lastSnap = result.snapshots[result.snapshots.length - 1];
     assert.ok(lastSnap.effective_capacity_rps < 100, `effective capacity (${lastSnap.effective_capacity_rps}) should be less than base (100)`);
   });
 
-  it('does not degrade capacity when queue is below threshold', async () => {
+  it('does not degrade capacity when utilization is below threshold', async () => {
+    // Traffic 50 RPS vs capacity 100 RPS = 50% utilization, below 80% threshold
     const config = makeConfig({
       simulation: { duration: 10, tick_interval: 1 },
-      service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100, backpressure_threshold: 10000, max_capacity_reduction: 0.5 },
-      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 120 } as SteadyParams } },
-      broker: { ...DEFAULT_BROKER, enabled: true, max_size: 0 },
+      service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100, saturation_threshold: 80, max_capacity_reduction: 0.5 },
+      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 50 } as SteadyParams } },
     });
     const result = await svc.run(config);
 
-    // Queue will grow slowly but stay well below 10000 threshold
     for (const snap of result.snapshots) {
       assert.equal(snap.effective_capacity_rps, snap.capacity_rps,
-        `t=${snap.time}: effective capacity should equal base when queue (${snap.queue_depth}) is below threshold`);
+        `t=${snap.time}: effective capacity should equal base when utilization (50%) is below threshold (80%)`);
     }
   });
 
   it('caps capacity reduction at max_capacity_reduction', async () => {
+    // Traffic 200 RPS vs capacity 100 = 100% utilization (capped), max reduction 0.3
     const config = makeConfig({
-      simulation: { duration: 60, tick_interval: 1 },
-      service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100, backpressure_threshold: 50, max_capacity_reduction: 0.3 },
-      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 1000 } as SteadyParams } },
-      broker: { ...DEFAULT_BROKER, enabled: true, max_size: 0 },
+      simulation: { duration: 10, tick_interval: 1 },
+      service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100, saturation_threshold: 80, max_capacity_reduction: 0.3 },
+      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 200 } as SteadyParams } },
     });
     const result = await svc.run(config);
 
-    // Even with massive queue, effective capacity should never drop below 70% of base
+    // Even at full saturation, effective capacity should never drop below 70% of base
     for (const snap of result.snapshots) {
       assert.ok(snap.effective_capacity_rps >= 70 - 0.01,
         `t=${snap.time}: effective capacity (${snap.effective_capacity_rps}) should be >= 70 (70% of 100)`);
     }
   });
 
-  it('backpressure is disabled when threshold is 0', async () => {
+  it('saturation is disabled when threshold is 0', async () => {
     const config = makeConfig({
-      simulation: { duration: 20, tick_interval: 1 },
-      service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100, backpressure_threshold: 0, max_capacity_reduction: 0.5 },
-      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams } },
-      broker: { ...DEFAULT_BROKER, enabled: true, max_size: 0 },
+      simulation: { duration: 10, tick_interval: 1 },
+      service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100, saturation_threshold: 0, max_capacity_reduction: 0.5 },
+      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 150 } as SteadyParams } },
     });
     const result = await svc.run(config);
     for (const snap of result.snapshots) {
       assert.equal(snap.effective_capacity_rps, snap.capacity_rps,
         `t=${snap.time}: no degradation when threshold is 0`);
     }
+  });
+
+  it('works in OLTP mode without broker', async () => {
+    // Saturation should degrade capacity even without a broker
+    const config = makeConfig({
+      simulation: { duration: 10, tick_interval: 1 },
+      service: { ...SVC, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100, saturation_threshold: 80, max_capacity_reduction: 0.5 },
+      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 150 } as SteadyParams } },
+      broker: { ...DEFAULT_BROKER, enabled: false },
+    });
+    const result = await svc.run(config);
+
+    const degradedTicks = result.snapshots.filter(s => s.effective_capacity_rps < s.capacity_rps);
+    assert.ok(degradedTicks.length > 0, 'saturation should degrade capacity even without broker');
   });
 });
 
@@ -849,7 +860,7 @@ describe('SimulationService — retry storms', () => {
   });
 });
 
-describe('SimulationService — backpressure new snapshot fields', () => {
+describe('SimulationService — saturation new snapshot fields', () => {
   it('includes all new fields in snapshots with defaults', async () => {
     const config = makeConfig({
       simulation: { duration: 5, tick_interval: 1 },

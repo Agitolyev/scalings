@@ -124,8 +124,9 @@ export class LocalSimulationService {
             const startingPods = pods.filter(p => p.state === 'starting');
             const servingPods = runningPods.length + shuttingDownPods.length;
             const baseCapacity = servingPods * service.capacity_per_replica;
-            // --- Backpressure: degrade capacity when queue is deep ---
-            const effectiveCapacity = this.applyBackpressure(baseCapacity, queuedRequests, broker.enabled, service);
+            // --- Saturation: degrade capacity when utilization is high ---
+            const rawUtilization = baseCapacity > 0 ? Math.min(effectiveTraffic, baseCapacity) / baseCapacity : 0;
+            const effectiveCapacity = this.applySaturation(baseCapacity, rawUtilization, service);
             const capacity = effectiveCapacity;
             const utilization = capacity > 0 ? effectiveTraffic / capacity : (effectiveTraffic > 0 ? Infinity : 0);
             // Store utilization for delayed observation
@@ -243,10 +244,10 @@ export class LocalSimulationService {
                 logEntries.push(`Recovered: capacity ${Math.round(capacity)} RPS now meets traffic ${Math.round(effectiveTraffic)} RPS`);
                 prevDropping = false;
             }
-            // Log backpressure if active
-            if (broker.enabled && service.backpressure_threshold > 0 && capacity < baseCapacity) {
+            // Log saturation if active
+            if (service.saturation_threshold > 0 && capacity < baseCapacity) {
                 const reductionPct = ((1 - capacity / baseCapacity) * 100).toFixed(0);
-                logEntries.push(`Backpressure: capacity reduced ${reductionPct}% (queue depth ${Math.round(queuedRequests)} exceeds threshold ${service.backpressure_threshold})`);
+                logEntries.push(`Saturation: capacity reduced ${reductionPct}% (utilization ${(rawUtilization * 100).toFixed(0)}% exceeds threshold ${service.saturation_threshold}%)`);
             }
             // Cost calculation: per-tick cost for all non-terminated pods
             const tickHours = simulation.tick_interval / 3600;
@@ -324,19 +325,20 @@ export class LocalSimulationService {
         return { served, dropped, queueDepth, logEntries };
     }
     /**
-     * Reduces effective capacity when queue depth exceeds the backpressure threshold.
-     * Models real-world degradation from memory pressure, GC pauses, and context switching
-     * under deep queue conditions. Degradation is linear from threshold to 2x threshold.
+     * Reduces effective capacity when pod utilization exceeds the saturation threshold.
+     * Models real-world degradation from CPU saturation, memory pressure, GC pauses,
+     * and thread contention. Degradation is linear from threshold to 100% utilization.
      */
-    applyBackpressure(baseCapacity, queueDepth, brokerEnabled, service) {
-        if (!brokerEnabled || service.backpressure_threshold <= 0 || service.max_capacity_reduction <= 0) {
+    applySaturation(baseCapacity, utilization, service) {
+        if (service.saturation_threshold <= 0 || service.max_capacity_reduction <= 0) {
             return baseCapacity;
         }
-        if (queueDepth <= service.backpressure_threshold) {
+        const threshold = service.saturation_threshold / 100;
+        if (utilization <= threshold) {
             return baseCapacity;
         }
-        const excess = queueDepth - service.backpressure_threshold;
-        const factor = Math.min(1, excess / service.backpressure_threshold);
+        const headroom = 1 - threshold;
+        const factor = headroom > 0 ? Math.min(1, (utilization - threshold) / headroom) : 1;
         const reduction = factor * service.max_capacity_reduction;
         return baseCapacity * (1 - reduction);
     }

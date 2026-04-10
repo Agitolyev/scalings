@@ -53,9 +53,9 @@ export interface ServiceConfig {
   pods_per_node: number;              // max pods that fit on one node
   graceful_shutdown_time: number;     // seconds
   cost_per_replica_hour: number;      // USD
-  // Backpressure (service degrades when broker queue is deep)
-  backpressure_threshold: number;     // queue depth at which capacity starts degrading (0 = disabled)
-  max_capacity_reduction: number;     // 0-1 fraction, max capacity loss from backpressure
+  // Saturation (service degrades under high utilization)
+  saturation_threshold: number;       // utilization % at which capacity starts degrading (0 = disabled)
+  max_capacity_reduction: number;     // 0-1 fraction, max capacity loss from saturation
   // Chaos
   pod_failure_rate: number;           // 0-100 percent probability per tick
   random_seed: number;                // 0 = non-deterministic, >0 = seeded PRNG
@@ -162,7 +162,7 @@ export interface TickSnapshot {
   queue_wait_time_ms: number;  // estimated avg wait time for queued requests
   expired_requests: number;    // requests expired from queue this tick (timeout)
   retry_requests: number;      // retry traffic injected this tick
-  effective_capacity_rps: number; // capacity after backpressure reduction
+  effective_capacity_rps: number; // capacity after saturation reduction
   utilization: number;         // 0-1 capacity utilization
   delayed_utilization: number; // utilization the autoscaler sees (with delay)
   estimated_cost: number;      // cumulative cost in USD
@@ -272,8 +272,8 @@ export const DEFAULT_SERVICE: ServiceConfig = {
   pods_per_node: 10,
   graceful_shutdown_time: 30,
   cost_per_replica_hour: 0.05,
-  // Backpressure
-  backpressure_threshold: 0,
+  // Saturation
+  saturation_threshold: 0,
   max_capacity_reduction: 0,
   // Chaos
   pod_failure_rate: 0,
@@ -425,7 +425,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
   },
   {
     name: 'Backpressure Death Spiral',
-    description: 'Broker backpressure degrades capacity under load, retries amplify traffic — demonstrates how deep queues cause cascading failures',
+    description: 'Pod saturation degrades capacity under load, retries amplify traffic — demonstrates how overloaded pods cause cascading failures',
     config: {
       name: 'Backpressure Death Spiral',
       service: {
@@ -438,7 +438,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         startup_time: 30,
         cooldown_scale_up: 10,
         metric_observation_delay: 10,
-        backpressure_threshold: 500,
+        saturation_threshold: 85,
         max_capacity_reduction: 0.4,
       },
       producer: {

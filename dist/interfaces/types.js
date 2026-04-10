@@ -43,8 +43,8 @@ export const DEFAULT_SERVICE = {
     pods_per_node: 10,
     graceful_shutdown_time: 30,
     cost_per_replica_hour: 0.05,
-    // Backpressure
-    backpressure_threshold: 0,
+    // Saturation
+    saturation_threshold: 0,
     max_capacity_reduction: 0,
     // Chaos
     pod_failure_rate: 0,
@@ -194,7 +194,7 @@ export const PRESET_SCENARIOS = [
     },
     {
         name: 'Backpressure Death Spiral',
-        description: 'Broker backpressure degrades capacity under load, retries amplify traffic — demonstrates how deep queues cause cascading failures',
+        description: 'Pod saturation degrades capacity under load, retries amplify traffic — demonstrates how overloaded pods cause cascading failures',
         config: {
             name: 'Backpressure Death Spiral',
             service: {
@@ -207,7 +207,7 @@ export const PRESET_SCENARIOS = [
                 startup_time: 30,
                 cooldown_scale_up: 10,
                 metric_observation_delay: 10,
-                backpressure_threshold: 500,
+                saturation_threshold: 85,
                 max_capacity_reduction: 0.4,
             },
             producer: {

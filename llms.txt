@@ -43,7 +43,7 @@ The config parameter is a base64-encoded JSON object matching the SimulationConf
     "cooldown_scale_down": 60, "node_provisioning_time": 120,
     "cluster_node_capacity": 20, "pods_per_node": 10,
     "graceful_shutdown_time": 30, "cost_per_replica_hour": 0.05,
-    "backpressure_threshold": 0, "max_capacity_reduction": 0,
+    "saturation_threshold": 0, "max_capacity_reduction": 0,
     "pod_failure_rate": 0, "random_seed": 0,
     "failure_events": []
   }
@@ -67,10 +67,10 @@ A message queue between producer and service (like SQS, Kafka, or a buffering lo
 - `request_timeout_ms`: Max wait time before a queued request expires (0 = no timeout).
 
 ### Service
-The pod fleet with scaling, backpressure degradation, and chaos engineering.
+The pod fleet with scaling, saturation degradation, and chaos engineering.
 - Basic scaling: `min_replicas`, `max_replicas`, `scale_up_threshold`, `scale_down_threshold`, `capacity_per_replica`, `startup_time`, `scale_up_step`, `scale_down_step`
 - Advanced: `metric_observation_delay`, `cooldown_scale_up`, `cooldown_scale_down`, `node_provisioning_time`, `cluster_node_capacity`, `pods_per_node`, `graceful_shutdown_time`, `cost_per_replica_hour`
-- Backpressure: `backpressure_threshold` (queue depth where capacity starts degrading), `max_capacity_reduction` (0-1 max capacity loss)
+- Saturation: `saturation_threshold` (utilization % where capacity starts degrading, 0 = disabled), `max_capacity_reduction` (0-1 max capacity loss)
 - Chaos: `pod_failure_rate` (0-100%), `random_seed`, `failure_events` [{time, count}]
 
 ## Traffic patterns available
@@ -87,7 +87,7 @@ The pod fleet with scaling, backpressure degradation, and chaos engineering.
 - Noisy Neighbor — wave traffic + random pod failures
 - Step Migration — phased rollout with discrete traffic steps
 - Bottomless Queue — unlimited broker, no drops
-- Backpressure Death Spiral — broker backpressure + retries cause cascading failure
+- Backpressure Death Spiral — pod saturation + retries cause cascading failure
 
 ## Who should use this
 DevOps engineers, SREs, platform teams, anyone tuning autoscaling policies.

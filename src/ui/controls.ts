@@ -159,8 +159,8 @@ export class UIControls {
       pods_per_node: this.getNumericValue('param-pods_per_node', DEFAULT_CONFIG.service.pods_per_node),
       graceful_shutdown_time: this.getNumericValue('param-graceful_shutdown_time', DEFAULT_CONFIG.service.graceful_shutdown_time),
       cost_per_replica_hour: this.getNumericValue('param-cost_per_replica_hour', DEFAULT_CONFIG.service.cost_per_replica_hour),
-      // Backpressure
-      backpressure_threshold: this.getNumericValue('param-backpressure_threshold', DEFAULT_CONFIG.service.backpressure_threshold),
+      // Saturation
+      saturation_threshold: this.getNumericValue('param-saturation_threshold', DEFAULT_CONFIG.service.saturation_threshold),
       max_capacity_reduction: this.getNumericValue('param-max_capacity_reduction', DEFAULT_CONFIG.service.max_capacity_reduction),
       // Chaos
       pod_failure_rate: this.getNumericValue('param-pod_failure_rate', DEFAULT_CONFIG.service.pod_failure_rate),
@@ -188,8 +188,8 @@ export class UIControls {
     this.setNumericValue('param-pods_per_node', service.pods_per_node);
     this.setNumericValue('param-graceful_shutdown_time', service.graceful_shutdown_time);
     this.setNumericValue('param-cost_per_replica_hour', service.cost_per_replica_hour);
-    // Backpressure
-    this.setNumericValue('param-backpressure_threshold', service.backpressure_threshold);
+    // Saturation
+    this.setNumericValue('param-saturation_threshold', service.saturation_threshold);
     this.setNumericValue('param-max_capacity_reduction', service.max_capacity_reduction);
     // Chaos
     this.setNumericValue('param-pod_failure_rate', service.pod_failure_rate);

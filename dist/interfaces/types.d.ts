@@ -31,7 +31,7 @@ export interface ServiceConfig {
     pods_per_node: number;
     graceful_shutdown_time: number;
     cost_per_replica_hour: number;
-    backpressure_threshold: number;
+    saturation_threshold: number;
     max_capacity_reduction: number;
     pod_failure_rate: number;
     random_seed: number;

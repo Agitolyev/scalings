@@ -12,11 +12,11 @@ export declare class LocalSimulationService implements SimulationService {
      */
     private resolveOverflow;
     /**
-     * Reduces effective capacity when queue depth exceeds the backpressure threshold.
-     * Models real-world degradation from memory pressure, GC pauses, and context switching
-     * under deep queue conditions. Degradation is linear from threshold to 2x threshold.
+     * Reduces effective capacity when pod utilization exceeds the saturation threshold.
+     * Models real-world degradation from CPU saturation, memory pressure, GC pauses,
+     * and thread contention. Degradation is linear from threshold to 100% utilization.
      */
-    private applyBackpressure;
+    private applySaturation;
     /**
      * Expires queued requests that have been waiting longer than the configured timeout.
      * Uses Little's Law: wait_time = queue_depth / capacity.

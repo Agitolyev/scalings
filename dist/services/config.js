@@ -125,8 +125,8 @@ export class LocalConfigService {
             pods_per_node: this.num(obj.pods_per_node, d.pods_per_node),
             graceful_shutdown_time: this.num(obj.graceful_shutdown_time, d.graceful_shutdown_time),
             cost_per_replica_hour: this.num(obj.cost_per_replica_hour, d.cost_per_replica_hour),
-            // Backpressure
-            backpressure_threshold: this.num(obj.backpressure_threshold, d.backpressure_threshold),
+            // Saturation
+            saturation_threshold: this.num(obj.saturation_threshold, d.saturation_threshold),
             max_capacity_reduction: this.num(obj.max_capacity_reduction, d.max_capacity_reduction),
             // Chaos
             pod_failure_rate: this.num(obj.pod_failure_rate, d.pod_failure_rate),
@@ -192,7 +192,7 @@ export class LocalConfigService {
         lines.push(`  pods_per_node: ${config.service.pods_per_node}`);
         lines.push(`  graceful_shutdown_time: ${config.service.graceful_shutdown_time}`);
         lines.push(`  cost_per_replica_hour: ${config.service.cost_per_replica_hour}`);
-        lines.push(`  backpressure_threshold: ${config.service.backpressure_threshold}`);
+        lines.push(`  saturation_threshold: ${config.service.saturation_threshold}`);
         lines.push(`  max_capacity_reduction: ${config.service.max_capacity_reduction}`);
         lines.push(`  pod_failure_rate: ${config.service.pod_failure_rate}`);
         lines.push(`  random_seed: ${config.service.random_seed}`);

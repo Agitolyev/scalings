@@ -18,8 +18,8 @@ Supported platforms:
 ## Features
 
 - **Traffic patterns** — steady, gradual ramp, spike, sinusoidal wave, discrete steps, or custom time-series
-- **Message broker** — optional queue between producer and service (like SQS/Kafka), with configurable size, request timeout, and backpressure degradation
-- **Backpressure modeling** — capacity degradation under deep queues, request expiry via TTL, retry storm amplification
+- **Message broker** — optional queue between producer and service (like SQS/Kafka), with configurable size and request timeout
+- **Saturation modeling** — capacity degradation under high pod utilization, request expiry via TTL, retry storm amplification
 - **Chaos engineering** — random pod failure rates and scheduled pod kill events with seeded PRNG for reproducible runs
 - **Real-world delays** — metric observation lag, cooldown periods, node provisioning time, graceful shutdown
 - **Cost estimation** — per-replica-hour cost tracking across the simulation
@@ -37,7 +37,7 @@ Supported platforms:
 | Noisy Neighbor | Sinusoidal traffic + random pod failures |
 | Step Migration | Phased rollout with discrete traffic steps |
 | Bottomless Queue | Unlimited broker — no drops, backlog drains as capacity catches up |
-| Backpressure Death Spiral | Broker backpressure + retries cause cascading failure |
+| Backpressure Death Spiral | Pod saturation + retries cause cascading failure |
 
 ## Development
 
@@ -90,7 +90,7 @@ The config is organized around three entities:
 
 - **Producer** — traffic pattern + retry behavior
 - **Broker** — optional message queue (enabled/disabled, max size, request timeout)
-- **Service** — pod fleet with scaling, cooldowns, backpressure, chaos, cost
+- **Service** — pod fleet with scaling, cooldowns, saturation, chaos, cost
 
 See [llms.txt](https://scalings.xyz/llms.txt) for full schema details.
 

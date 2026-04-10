@@ -458,7 +458,7 @@ class App {
     if (msg.startsWith('Dropping')) return { type: 'drop', category: 'traffic' };
     if (msg.startsWith('Recovered')) return { type: 'recover', category: 'traffic' };
     if (msg.startsWith('Expired')) return { type: 'expired', category: 'traffic' };
-    if (msg.startsWith('Backpressure')) return { type: 'backpressure', category: 'traffic' };
+    if (msg.startsWith('Saturation')) return { type: 'backpressure', category: 'traffic' };
     if (msg.includes('will retry')) return { type: 'retry', category: 'traffic' };
     return { type: 'info', category: 'scale' };
   }
