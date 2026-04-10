@@ -192,6 +192,25 @@ class App {
             if (el)
                 el.addEventListener('change', () => this.applyLogFilters());
         }
+        // Log copy & download
+        const logCopyBtn = document.getElementById('btn-log-copy');
+        if (logCopyBtn) {
+            logCopyBtn.addEventListener('click', () => {
+                const text = this.getLogText();
+                if (!text)
+                    return;
+                navigator.clipboard.writeText(text).then(() => this.showToast('Log copied to clipboard', 'success'));
+            });
+        }
+        const logDownloadBtn = document.getElementById('btn-log-download');
+        if (logDownloadBtn) {
+            logDownloadBtn.addEventListener('click', () => {
+                const text = this.getLogText();
+                if (!text)
+                    return;
+                this.offerDownload(text, 'simulation-log.txt', 'text/plain');
+            });
+        }
         // Feedback dropdown
         const feedbackBtn = document.querySelector('.header-feedback-btn');
         const feedbackDropdown = document.querySelector('.feedback-dropdown');
@@ -353,6 +372,19 @@ class App {
             const cat = el.dataset.category || 'scale';
             el.style.display = filters[cat] ? '' : 'none';
         }
+    }
+    getLogText() {
+        const lines = document.querySelectorAll('.log-line');
+        const parts = [];
+        for (const line of lines) {
+            const el = line;
+            if (el.style.display === 'none')
+                continue;
+            const time = el.querySelector('.log-time')?.textContent || '';
+            const msg = el.querySelector('.log-msg')?.textContent || '';
+            parts.push(`[${time}] ${msg}`);
+        }
+        return parts.join('\n');
     }
     // --- Export / Import ---
     exportSourceConfig() {

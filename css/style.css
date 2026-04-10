@@ -942,6 +942,26 @@ button:active, .btn:active {
   accent-color: var(--cyan);
 }
 
+.log-toolbar-sep {
+  width: 1px;
+  height: 1rem;
+  background: var(--border-subtle);
+  margin: 0 0.15rem;
+  flex-shrink: 0;
+}
+
+.log-action-btn {
+  font-size: 0.68rem !important;
+  padding: 0.15rem 0.5rem !important;
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+}
+
+.log-action-btn:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
 .log-entries {
   max-height: 320px;
   overflow-y: auto;
