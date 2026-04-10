@@ -4,10 +4,41 @@
 
 Browser-based autoscaling simulator (Kubernetes HPA, AWS ASG, GCP MIG). Pure TypeScript, no frameworks, runs 100% in the browser. All services are composable and testable via dependency injection.
 
-**This app is designed to be usable by LLMs.** An LLM should be able to understand what the simulator does, configure a scenario, run it, and interpret the results (summary stats, chart data, decision log). Keep the UI semantically clear: use descriptive labels, tooltips with concrete explanations, and structured output that's easy to parse visually or programmatically.
+**This app is designed to be usable by LLMs.** The simulation engine has no DOM dependencies — an LLM with code execution can run simulations directly via the service layer without a browser. The web UI should also be semantically clear so LLMs that *can* see/interact with the page can understand it.
+
+### How an LLM can run a simulation (no browser needed)
+
+```ts
+import { LocalSimulationService } from './services/simulation.js';
+import { LocalTrafficPatternService } from './services/traffic.js';
+import { DEFAULT_CONFIG } from './interfaces/types.js';
+
+const traffic = new LocalTrafficPatternService();
+const sim = new LocalSimulationService(traffic);
+
+const config = {
+  ...DEFAULT_CONFIG,
+  scaling: { ...DEFAULT_CONFIG.scaling, min_replicas: 5, max_replicas: 50 },
+  traffic: { pattern: 'spike', params: { base_rps: 200, spike_rps: 2000, spike_start: 60, spike_duration: 30 } },
+  queue: { enabled: true, max_size: 0 },  // unlimited queue
+};
+
+const result = await sim.run(config);
+console.log(result.summary);       // { total_requests, total_dropped, peak_queue_depth, ... }
+console.log(result.snapshots[0]);  // per-tick data: traffic_rps, capacity_rps, queue_depth, ...
+```
+
+The config service can also generate shareable URLs and YAML without a browser:
+```ts
+import { LocalConfigService } from './services/config.js';
+const cfgSvc = new LocalConfigService();
+const yaml = cfgSvc.export(config);   // human-readable YAML
+const url = cfgSvc.toURL(config);     // #config=<base64> hash
+```
 
 ## LLM Usability Principles
 
+- **Headless-first services**: Simulation, config, traffic, and export services have zero DOM dependencies. They can be imported and used in Node.js, test harnesses, or by an LLM with code execution. Only `ui/` touches the DOM.
 - **Descriptive labels and tooltips**: Every input should have a `title` or tooltip that explains what the parameter does in concrete terms (units, valid ranges, what 0 or edge values mean). An LLM reading the page should understand each control without needing external docs.
 - **Structured results**: Summary stats use distinct IDs (`stat-total-requests`, `stat-drop-rate`, etc.). The decision log classifies entries by type (`scale-up`, `failure`, `drop`, `recover`). Chart datasets have descriptive labels (`Traffic (RPS)`, `Queue Depth`). Keep these machine-parseable.
 - **Shareable state**: The URL hash encoding (`#config=<base64>`) and YAML export mean an LLM can generate, share, or reproduce any simulation scenario without interacting with the DOM.
