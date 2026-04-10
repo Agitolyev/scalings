@@ -313,6 +313,7 @@ export class UIControls {
                         chaos: { ...DEFAULT_CONFIG.chaos, ...(preset.config.chaos || {}) },
                         simulation: { ...DEFAULT_CONFIG.simulation, ...(preset.config.simulation || {}) },
                         traffic: preset.config.traffic || DEFAULT_CONFIG.traffic,
+                        queue: { ...DEFAULT_CONFIG.queue, ...(preset.config.queue || {}) },
                     };
                     this.setConfig(fullConfig);
                     this.notifyChange();

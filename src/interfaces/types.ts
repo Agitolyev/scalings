@@ -369,4 +369,33 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
       },
     },
   },
+  {
+    name: 'Bottomless Queue',
+    description: 'Spike traffic with an unlimited queue — no requests dropped, backlog drains as capacity catches up',
+    config: {
+      name: 'Bottomless Queue',
+      scaling: {
+        ...DEFAULT_SCALING,
+        min_replicas: 2,
+        max_replicas: 50,
+        scale_up_threshold: 70,
+        scale_up_step: 4,
+        capacity_per_replica: 100,
+        startup_time: 30,
+      },
+      advanced: {
+        ...DEFAULT_ADVANCED,
+        cooldown_scale_up: 15,
+        metric_observation_delay: 10,
+      },
+      traffic: {
+        pattern: 'spike',
+        params: { base_rps: 200, spike_rps: 2000, spike_start: 60, spike_duration: 90 } as SpikeParams,
+      },
+      queue: {
+        enabled: true,
+        max_size: 0,
+      },
+    },
+  },
 ];
