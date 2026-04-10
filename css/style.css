@@ -1032,6 +1032,35 @@ button:active, .btn:active {
   color: var(--text-secondary);
 }
 
+.log-run {
+  color: var(--purple);
+  min-width: 40px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.log-run-filter-container {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.log-run-filter-container.hidden {
+  display: none;
+}
+
+.log-run-select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 .log-line[data-type="scale-up"] .log-msg { color: var(--cyan); }
 .log-line[data-type="scale-down"] .log-msg { color: var(--purple); }
 .log-line[data-type="failure"] .log-msg { color: var(--red); }

@@ -9,6 +9,7 @@ class App {
         this.isSimulating = false;
         this.isRecording = false;
         this.recordedRuns = [];
+        this.runCounter = 0;
         this.services = createServices();
         this.controls = new UIControls(this.services.traffic);
         this.chart = new ChartRenderer();
@@ -47,13 +48,16 @@ class App {
                 this.isRecording = recordToggle.checked;
                 if (purgeBtn)
                     purgeBtn.classList.toggle('hidden', !this.isRecording);
-                if (!this.isRecording)
+                if (!this.isRecording) {
                     this.recordedRuns = [];
+                    this.runCounter = 0;
+                }
             });
         }
         if (purgeBtn) {
             purgeBtn.addEventListener('click', () => {
                 this.recordedRuns = [];
+                this.runCounter = 0;
                 this.showToast('All recorded runs cleared', 'success');
             });
         }
@@ -192,6 +196,9 @@ class App {
             if (el)
                 el.addEventListener('change', () => this.applyLogFilters());
         }
+        const runFilterEl = document.getElementById('log-run-filter');
+        if (runFilterEl)
+            runFilterEl.addEventListener('change', () => this.applyLogFilters());
         // Log copy & download
         const logCopyBtn = document.getElementById('btn-log-copy');
         if (logCopyBtn) {
@@ -271,7 +278,14 @@ class App {
                 await this.chart.renderAnimated('sim-chart', result, speed);
             }
             this.renderSummary(result.summary);
-            this.renderLog(result.snapshots);
+            this.runCounter++;
+            const runName = `Run ${this.runCounter}`;
+            if (this.isRecording) {
+                this.renderMultiRunLog(this.recordedRuns);
+            }
+            else {
+                this.renderLog(result.snapshots, null);
+            }
         }
         catch (err) {
             console.error('Simulation error:', err);
@@ -380,35 +394,84 @@ class App {
             return { type: 'retry', category: 'traffic' };
         return { type: 'info', category: 'scale' };
     }
-    renderLog(snapshots) {
+    renderLog(snapshots, runName) {
         const container = document.getElementById('log-entries');
         const countEl = document.getElementById('log-count');
         if (!container)
             return;
         container.innerHTML = '';
+        this.updateRunFilter(runName ? [runName] : []);
         let eventCount = 0;
         for (const snap of snapshots) {
             if (snap.log_entries.length === 0)
                 continue;
             for (const msg of snap.log_entries) {
                 eventCount++;
-                const { type, category } = this.classifyLog(msg);
-                const line = document.createElement('div');
-                line.className = 'log-line';
-                line.dataset.type = type;
-                line.dataset.category = category;
-                const timeStr = snap.time >= 3600
-                    ? `${Math.floor(snap.time / 3600)}h${Math.floor((snap.time % 3600) / 60).toString().padStart(2, '0')}m${(snap.time % 60).toString().padStart(2, '0')}s`
-                    : snap.time >= 60
-                        ? `${Math.floor(snap.time / 60)}m${(snap.time % 60).toString().padStart(2, '0')}s`
-                        : `${snap.time}s`;
-                line.innerHTML = `<span class="log-time">${timeStr}</span><span class="log-msg">${msg}</span>`;
-                container.appendChild(line);
+                this.appendLogLine(container, snap.time, msg, runName);
             }
         }
         if (countEl)
             countEl.textContent = `${eventCount} events`;
         this.applyLogFilters();
+    }
+    renderMultiRunLog(runs) {
+        const container = document.getElementById('log-entries');
+        const countEl = document.getElementById('log-count');
+        if (!container)
+            return;
+        container.innerHTML = '';
+        const runNames = runs.map(r => r.name);
+        this.updateRunFilter(runNames);
+        let eventCount = 0;
+        for (const run of runs) {
+            for (const snap of run.result.snapshots) {
+                if (snap.log_entries.length === 0)
+                    continue;
+                for (const msg of snap.log_entries) {
+                    eventCount++;
+                    this.appendLogLine(container, snap.time, msg, run.name);
+                }
+            }
+        }
+        if (countEl)
+            countEl.textContent = `${eventCount} events`;
+        this.applyLogFilters();
+    }
+    appendLogLine(container, time, msg, runName) {
+        const { type, category } = this.classifyLog(msg);
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.dataset.type = type;
+        line.dataset.category = category;
+        if (runName)
+            line.dataset.run = runName;
+        const timeStr = time >= 3600
+            ? `${Math.floor(time / 3600)}h${Math.floor((time % 3600) / 60).toString().padStart(2, '0')}m${(time % 60).toString().padStart(2, '0')}s`
+            : time >= 60
+                ? `${Math.floor(time / 60)}m${(time % 60).toString().padStart(2, '0')}s`
+                : `${time}s`;
+        const runCol = runName ? `<span class="log-run">${runName}</span>` : '';
+        line.innerHTML = `${runCol}<span class="log-time">${timeStr}</span><span class="log-msg">${msg}</span>`;
+        container.appendChild(line);
+    }
+    updateRunFilter(runNames) {
+        const filterContainer = document.getElementById('log-run-filter-container');
+        const select = document.getElementById('log-run-filter');
+        if (!filterContainer || !select)
+            return;
+        if (runNames.length <= 1) {
+            filterContainer.classList.add('hidden');
+            select.innerHTML = '<option value="all">All Runs</option>';
+            return;
+        }
+        filterContainer.classList.remove('hidden');
+        select.innerHTML = '<option value="all">All Runs</option>';
+        for (const name of runNames) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+        }
     }
     applyLogFilters() {
         const filters = {
@@ -417,11 +480,15 @@ class App {
             failures: document.getElementById('log-filter-failures')?.checked ?? true,
             traffic: document.getElementById('log-filter-traffic')?.checked ?? true,
         };
+        const runFilter = document.getElementById('log-run-filter')?.value || 'all';
         const lines = document.querySelectorAll('.log-line');
         for (const line of lines) {
             const el = line;
             const cat = el.dataset.category || 'scale';
-            el.style.display = filters[cat] ? '' : 'none';
+            const run = el.dataset.run || '';
+            const categoryMatch = filters[cat];
+            const runMatch = runFilter === 'all' || run === runFilter;
+            el.style.display = (categoryMatch && runMatch) ? '' : 'none';
         }
     }
     getLogText() {
@@ -431,9 +498,11 @@ class App {
             const el = line;
             if (el.style.display === 'none')
                 continue;
+            const run = el.querySelector('.log-run')?.textContent || '';
             const time = el.querySelector('.log-time')?.textContent || '';
             const msg = el.querySelector('.log-msg')?.textContent || '';
-            parts.push(`[${time}] ${msg}`);
+            const prefix = run ? `[${run}] ` : '';
+            parts.push(`${prefix}[${time}] ${msg}`);
         }
         return parts.join('\n');
     }

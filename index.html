@@ -525,6 +525,12 @@
               <label class="log-filter-label">
                 <input type="checkbox" id="log-filter-traffic" checked> Traffic drops
               </label>
+              <span id="log-run-filter-container" class="log-run-filter-container hidden">
+                <label for="log-run-filter" class="log-filter-label">Run:</label>
+                <select id="log-run-filter" class="log-run-select" title="Filter log entries by simulation run">
+                  <option value="all">All Runs</option>
+                </select>
+              </span>
               <span class="log-toolbar-sep"></span>
               <button id="btn-log-copy" class="btn btn-small log-action-btn" title="Copy log to clipboard">Copy All</button>
               <button id="btn-log-download" class="btn btn-small log-action-btn" title="Download log as .txt file">Download</button>
