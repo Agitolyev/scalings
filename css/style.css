@@ -339,6 +339,23 @@ legend {
   color: var(--amber);
 }
 
+.param-group {
+  border-left: 2px solid var(--border-subtle);
+  padding-left: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.param-group-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin-bottom: 0.4rem;
+}
+
 .advanced-columns {
   display: flex;
   gap: 1.2rem;
