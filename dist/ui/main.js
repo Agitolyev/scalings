@@ -172,6 +172,18 @@ class App {
                 }
             });
         }
+        // Feedback dropdown
+        const feedbackBtn = document.querySelector('.header-feedback-btn');
+        const feedbackDropdown = document.querySelector('.feedback-dropdown');
+        if (feedbackBtn && feedbackDropdown) {
+            feedbackBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                feedbackDropdown.classList.toggle('open');
+            });
+            document.addEventListener('click', () => {
+                feedbackDropdown.classList.remove('open');
+            });
+        }
         // Drag and drop for YAML import
         document.addEventListener('dragover', (e) => e.preventDefault());
         document.addEventListener('drop', (e) => {

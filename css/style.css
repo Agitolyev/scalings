@@ -156,6 +156,60 @@ header {
   color: var(--cyan);
 }
 
+.feedback-wrapper {
+  position: relative;
+}
+
+.header-feedback-btn {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+  cursor: pointer;
+}
+
+.header-feedback-btn:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.feedback-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  min-width: 170px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.feedback-dropdown.open {
+  display: block;
+}
+
+.feedback-dropdown a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.feedback-dropdown a:hover {
+  background: var(--input-bg);
+  color: var(--cyan);
+}
+
+.feedback-dropdown a + a {
+  border-top: 1px solid var(--border-subtle);
+}
+
 .github-badge {
   color: var(--text-muted);
   transition: color 0.2s;
