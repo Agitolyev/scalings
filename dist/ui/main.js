@@ -46,7 +46,7 @@ class App {
         const exportRunsBtn = document.getElementById('btn-export-runs');
         const importRunsBtn = document.getElementById('btn-import-runs');
         const importRunsInput = document.getElementById('import-runs-input');
-        const runButtons = [purgeBtn, exportRunsBtn, importRunsBtn];
+        const runButtons = [purgeBtn, exportRunsBtn];
         if (recordToggle) {
             recordToggle.addEventListener('change', () => {
                 this.isRecording = recordToggle.checked;
