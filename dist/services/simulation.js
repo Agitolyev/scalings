@@ -40,6 +40,7 @@ export class LocalSimulationService {
         const snapshots = [];
         // Queue state
         let queuedRequests = 0;
+        let pendingRetries = 0; // retry traffic carried over from previous tick
         // Utilization history for delayed observation
         const utilizationHistory = [];
         // Initialize with min replicas (already running)
@@ -112,14 +113,21 @@ export class LocalSimulationService {
             if (finishedShutdown > 0) {
                 logEntries.push(`${finishedShutdown} pod${finishedShutdown > 1 ? 's' : ''} completed graceful shutdown and terminated`);
             }
+            // --- Inject retry traffic from previous tick ---
+            const retryTraffic = pendingRetries;
+            pendingRetries = 0;
+            const effectiveTraffic = currentTraffic + retryTraffic;
             // --- Calculate capacity ---
             const runningPods = pods.filter(p => p.state === 'running');
             // Pods shutting down still serve traffic during graceful shutdown
             const shuttingDownPods = pods.filter(p => p.state === 'shutting_down');
             const startingPods = pods.filter(p => p.state === 'starting');
             const servingPods = runningPods.length + shuttingDownPods.length;
-            const capacity = servingPods * scaling.capacity_per_replica;
-            const utilization = capacity > 0 ? currentTraffic / capacity : (currentTraffic > 0 ? Infinity : 0);
+            const baseCapacity = servingPods * scaling.capacity_per_replica;
+            // --- Backpressure: degrade capacity when queue is deep ---
+            const effectiveCapacity = this.applyBackpressure(baseCapacity, queuedRequests, queue);
+            const capacity = effectiveCapacity;
+            const utilization = capacity > 0 ? effectiveTraffic / capacity : (effectiveTraffic > 0 ? Infinity : 0);
             // Store utilization for delayed observation
             utilizationHistory.push(utilization);
             // Get delayed utilization
@@ -197,25 +205,48 @@ export class LocalSimulationService {
                 && delayedUtilization > 0) {
                 logEntries.push(`Already at min replicas (${scaling.min_replicas}), cannot scale down further`);
             }
+            // --- Expire timed-out requests from queue ---
+            const expired = this.expireQueuedRequests(queuedRequests, capacity, queue);
+            queuedRequests -= expired;
+            if (expired > 0) {
+                logEntries.push(`Expired ${Math.round(expired)} requests from queue (exceeded ${queue.request_timeout_ms}ms timeout)`);
+            }
             // --- Resolve overflow (OLTP drop vs Queue buffer) ---
-            const overflow = this.resolveOverflow(currentTraffic, capacity, queuedRequests, queue);
+            const overflow = this.resolveOverflow(effectiveTraffic, capacity, queuedRequests, queue);
             const { served, dropped } = overflow;
             queuedRequests = overflow.queueDepth;
             for (const msg of overflow.logEntries)
                 logEntries.push(msg);
+            // --- Calculate queue wait time (Little's Law) ---
+            const queueWaitTimeMs = capacity > 0 && queuedRequests > 0
+                ? (queuedRequests / capacity) * 1000
+                : 0;
+            // --- Schedule retries for next tick ---
+            const retriable = dropped + expired;
+            if (queue.retry_rate > 0 && retriable > 0) {
+                pendingRetries = Math.round(retriable * queue.retry_rate);
+                if (pendingRetries > 0) {
+                    logEntries.push(`${pendingRetries} requests will retry next tick (${(queue.retry_rate * 100).toFixed(0)}% retry rate)`);
+                }
+            }
             // Log drop transitions
             if (dropped > 0 && !prevDropping) {
                 if (queue.enabled) {
                     logEntries.push(`Queue full — dropping requests: ${Math.round(dropped)} RPS overflow (queue max: ${queue.max_size})`);
                 }
                 else {
-                    logEntries.push(`Dropping requests: traffic ${Math.round(currentTraffic)} RPS exceeds capacity ${Math.round(capacity)} RPS (${Math.round(dropped)} RPS dropped)`);
+                    logEntries.push(`Dropping requests: traffic ${Math.round(effectiveTraffic)} RPS exceeds capacity ${Math.round(capacity)} RPS (${Math.round(dropped)} RPS dropped)`);
                 }
                 prevDropping = true;
             }
             else if (dropped === 0 && prevDropping) {
-                logEntries.push(`Recovered: capacity ${Math.round(capacity)} RPS now meets traffic ${Math.round(currentTraffic)} RPS`);
+                logEntries.push(`Recovered: capacity ${Math.round(capacity)} RPS now meets traffic ${Math.round(effectiveTraffic)} RPS`);
                 prevDropping = false;
+            }
+            // Log backpressure if active
+            if (queue.enabled && queue.backpressure_threshold > 0 && capacity < baseCapacity) {
+                const reductionPct = ((1 - capacity / baseCapacity) * 100).toFixed(0);
+                logEntries.push(`Backpressure: capacity reduced ${reductionPct}% (queue depth ${Math.round(queuedRequests)} exceeds threshold ${queue.backpressure_threshold})`);
             }
             // Cost calculation: per-tick cost for all non-terminated pods
             const tickHours = simulation.tick_interval / 3600;
@@ -236,7 +267,7 @@ export class LocalSimulationService {
             snapshots.push({
                 time,
                 traffic_rps: currentTraffic,
-                capacity_rps: capacity,
+                capacity_rps: baseCapacity,
                 running_pods: snapshotRunning,
                 total_pods: pods.length,
                 starting_pods: snapshotStarting,
@@ -244,6 +275,10 @@ export class LocalSimulationService {
                 served_requests: served,
                 dropped_requests: dropped,
                 queue_depth: queuedRequests,
+                queue_wait_time_ms: queueWaitTimeMs,
+                expired_requests: expired,
+                retry_requests: retryTraffic,
+                effective_capacity_rps: capacity,
                 utilization: Math.min(utilization, 2), // Cap display at 200%
                 delayed_utilization: Math.min(delayedUtilization, 2),
                 estimated_cost: cumulativeCost,
@@ -288,6 +323,40 @@ export class LocalSimulationService {
         }
         return { served, dropped, queueDepth, logEntries };
     }
+    /**
+     * Reduces effective capacity when queue depth exceeds the backpressure threshold.
+     * Models real-world degradation from memory pressure, GC pauses, and context switching
+     * under deep queue conditions. Degradation is linear from threshold to 2x threshold.
+     */
+    applyBackpressure(baseCapacity, queueDepth, queue) {
+        if (!queue.enabled || queue.backpressure_threshold <= 0 || queue.max_capacity_reduction <= 0) {
+            return baseCapacity;
+        }
+        if (queueDepth <= queue.backpressure_threshold) {
+            return baseCapacity;
+        }
+        const excess = queueDepth - queue.backpressure_threshold;
+        const factor = Math.min(1, excess / queue.backpressure_threshold);
+        const reduction = factor * queue.max_capacity_reduction;
+        return baseCapacity * (1 - reduction);
+    }
+    /**
+     * Expires queued requests that have been waiting longer than the configured timeout.
+     * Uses Little's Law: wait_time = queue_depth / capacity.
+     * Returns the number of requests expired.
+     */
+    expireQueuedRequests(queueDepth, capacity, queue) {
+        if (!queue.enabled || queue.request_timeout_ms <= 0 || queueDepth <= 0 || capacity <= 0) {
+            return 0;
+        }
+        const waitTimeMs = (queueDepth / capacity) * 1000;
+        if (waitTimeMs <= queue.request_timeout_ms) {
+            return 0;
+        }
+        // Trim queue to the depth where wait_time = timeout
+        const maxQueueForTimeout = Math.floor(capacity * queue.request_timeout_ms / 1000);
+        return Math.max(0, queueDepth - maxQueueForTimeout);
+    }
     calculateSummary(snapshots, tickInterval) {
         let totalRequests = 0;
         let totalServed = 0;
@@ -295,6 +364,11 @@ export class LocalSimulationService {
         let peakPods = 0;
         let minPods = Infinity;
         let peakQueueDepth = 0;
+        let totalWaitTimeMs = 0;
+        let peakWaitTimeMs = 0;
+        let waitTimeTicks = 0;
+        let totalExpired = 0;
+        let totalRetries = 0;
         let underProvisionedTicks = 0;
         // Track recovery: time from first drop to when system stabilizes
         let firstDropTime = null;
@@ -306,6 +380,13 @@ export class LocalSimulationService {
             peakPods = Math.max(peakPods, snap.total_pods);
             minPods = Math.min(minPods, snap.running_pods);
             peakQueueDepth = Math.max(peakQueueDepth, snap.queue_depth);
+            if (snap.queue_wait_time_ms > 0) {
+                totalWaitTimeMs += snap.queue_wait_time_ms;
+                waitTimeTicks++;
+            }
+            peakWaitTimeMs = Math.max(peakWaitTimeMs, snap.queue_wait_time_ms);
+            totalExpired += snap.expired_requests * tickInterval;
+            totalRetries += snap.retry_requests * tickInterval;
             if (snap.dropped_requests > 0) {
                 underProvisionedTicks++;
                 if (firstDropTime === null)
@@ -333,6 +414,10 @@ export class LocalSimulationService {
             peak_pod_count: peakPods,
             min_pod_count: minPods === Infinity ? 0 : minPods,
             peak_queue_depth: peakQueueDepth,
+            avg_queue_wait_time_ms: waitTimeTicks > 0 ? totalWaitTimeMs / waitTimeTicks : 0,
+            peak_queue_wait_time_ms: peakWaitTimeMs,
+            total_expired: Math.round(totalExpired),
+            total_retries: Math.round(totalRetries),
             time_under_provisioned_seconds: underProvisionedSeconds,
             time_under_provisioned_percent: totalDuration > 0 ? (underProvisionedSeconds / totalDuration) * 100 : 0,
             time_to_recover_seconds: firstDropTime !== null && recoveredTime !== null ? recoveredTime - firstDropTime : null,

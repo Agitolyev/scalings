@@ -44,6 +44,11 @@ export interface AdvancedParams {
 export interface QueueConfig {
   enabled: boolean;
   max_size: number;           // max queued requests (0 = unlimited)
+  // Backpressure parameters
+  backpressure_threshold: number;  // queue depth at which capacity starts degrading (0 = disabled)
+  max_capacity_reduction: number;  // 0-1 fraction, max capacity loss from backpressure
+  request_timeout_ms: number;      // max wait time before request expires from queue (0 = no timeout)
+  retry_rate: number;              // 0-1 fraction of dropped/expired requests that retry next tick
 }
 
 // --- Chaos Engineering ---
@@ -153,6 +158,10 @@ export interface TickSnapshot {
   served_requests: number;     // requests served this tick
   dropped_requests: number;    // requests dropped this tick
   queue_depth: number;         // requests waiting in queue
+  queue_wait_time_ms: number;  // estimated avg wait time for queued requests
+  expired_requests: number;    // requests expired from queue this tick (timeout)
+  retry_requests: number;      // retry traffic injected this tick
+  effective_capacity_rps: number; // capacity after backpressure reduction
   utilization: number;         // 0-1 capacity utilization
   delayed_utilization: number; // utilization the autoscaler sees (with delay)
   estimated_cost: number;      // cumulative cost in USD
@@ -173,6 +182,10 @@ export interface SimulationSummary {
   peak_pod_count: number;
   min_pod_count: number;
   peak_queue_depth: number;
+  avg_queue_wait_time_ms: number;
+  peak_queue_wait_time_ms: number;
+  total_expired: number;
+  total_retries: number;
   time_under_provisioned_seconds: number;
   time_under_provisioned_percent: number;
   time_to_recover_seconds: number | null;  // null if no drops or never recovered
@@ -238,6 +251,10 @@ export const DEFAULT_ADVANCED: AdvancedParams = {
 export const DEFAULT_QUEUE: QueueConfig = {
   enabled: false,
   max_size: 1000,
+  backpressure_threshold: 0,
+  max_capacity_reduction: 0,
+  request_timeout_ms: 0,
+  retry_rate: 0,
 };
 
 export const DEFAULT_CHAOS: ChaosConfig = {
@@ -393,8 +410,42 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
         params: { base_rps: 200, spike_rps: 2000, spike_start: 60, spike_duration: 90 } as SpikeParams,
       },
       queue: {
+        ...DEFAULT_QUEUE,
         enabled: true,
         max_size: 0,
+      },
+    },
+  },
+  {
+    name: 'Backpressure Death Spiral',
+    description: 'Queue backpressure degrades capacity under load, retries amplify traffic — demonstrates how deep queues cause cascading failures',
+    config: {
+      name: 'Backpressure Death Spiral',
+      scaling: {
+        ...DEFAULT_SCALING,
+        min_replicas: 3,
+        max_replicas: 30,
+        scale_up_threshold: 70,
+        scale_up_step: 3,
+        capacity_per_replica: 100,
+        startup_time: 30,
+      },
+      advanced: {
+        ...DEFAULT_ADVANCED,
+        cooldown_scale_up: 10,
+        metric_observation_delay: 10,
+      },
+      traffic: {
+        pattern: 'spike',
+        params: { base_rps: 200, spike_rps: 1500, spike_start: 30, spike_duration: 60 } as SpikeParams,
+      },
+      queue: {
+        enabled: true,
+        max_size: 5000,
+        backpressure_threshold: 500,
+        max_capacity_reduction: 0.4,
+        request_timeout_ms: 10000,
+        retry_rate: 0.3,
       },
     },
   },

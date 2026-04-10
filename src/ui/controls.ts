@@ -468,6 +468,10 @@ export class UIControls {
     return {
       enabled: toggle ? toggle.checked : false,
       max_size: this.getNumericValue('param-queue_max_size', DEFAULT_CONFIG.queue.max_size),
+      backpressure_threshold: this.getNumericValue('param-queue_backpressure_threshold', DEFAULT_CONFIG.queue.backpressure_threshold),
+      max_capacity_reduction: this.getNumericValue('param-queue_max_capacity_reduction', DEFAULT_CONFIG.queue.max_capacity_reduction),
+      request_timeout_ms: this.getNumericValue('param-queue_request_timeout_ms', DEFAULT_CONFIG.queue.request_timeout_ms),
+      retry_rate: this.getNumericValue('param-queue_retry_rate', DEFAULT_CONFIG.queue.retry_rate),
     };
   }
 
@@ -479,6 +483,10 @@ export class UIControls {
       if (params) params.classList.toggle('hidden', !queue.enabled);
     }
     this.setNumericValue('param-queue_max_size', queue.max_size);
+    this.setNumericValue('param-queue_backpressure_threshold', queue.backpressure_threshold);
+    this.setNumericValue('param-queue_max_capacity_reduction', queue.max_capacity_reduction);
+    this.setNumericValue('param-queue_request_timeout_ms', queue.request_timeout_ms);
+    this.setNumericValue('param-queue_retry_rate', queue.retry_rate);
     const maxSizeInput = document.getElementById('param-queue_max_size') as HTMLInputElement;
     if (maxSizeInput) this.updateQueueSizeUI(maxSizeInput);
   }

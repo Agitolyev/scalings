@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
 import { LocalConfigService } from '../services/config.js';
-import { DEFAULT_CONFIG, DEFAULT_SCALING, } from '../interfaces/types.js';
+import { DEFAULT_CONFIG, DEFAULT_SCALING, DEFAULT_QUEUE, } from '../interfaces/types.js';
 const svc = new LocalConfigService();
 function makeConfig(overrides = {}) {
     return { ...DEFAULT_CONFIG, ...overrides };
@@ -92,7 +92,7 @@ describe('ConfigService — YAML round-trip', () => {
     });
     it('preserves queue config', () => {
         const config = makeConfig({
-            queue: { enabled: true, max_size: 5000 },
+            queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 5000 },
         });
         const yaml = svc.export(config);
         const imported = svc.import(yaml);
@@ -101,7 +101,7 @@ describe('ConfigService — YAML round-trip', () => {
     });
     it('preserves queue config with unlimited size', () => {
         const config = makeConfig({
-            queue: { enabled: true, max_size: 0 },
+            queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0 },
         });
         const yaml = svc.export(config);
         const imported = svc.import(yaml);
@@ -110,12 +110,32 @@ describe('ConfigService — YAML round-trip', () => {
     });
     it('preserves queue disabled state', () => {
         const config = makeConfig({
-            queue: { enabled: false, max_size: 1000 },
+            queue: { ...DEFAULT_QUEUE, enabled: false, max_size: 1000 },
         });
         const yaml = svc.export(config);
         const imported = svc.import(yaml);
         assert.equal(imported.queue.enabled, false);
         assert.equal(imported.queue.max_size, 1000);
+    });
+    it('preserves queue backpressure config', () => {
+        const config = makeConfig({
+            queue: {
+                enabled: true,
+                max_size: 5000,
+                backpressure_threshold: 500,
+                max_capacity_reduction: 0.4,
+                request_timeout_ms: 10000,
+                retry_rate: 0.3,
+            },
+        });
+        const yaml = svc.export(config);
+        const imported = svc.import(yaml);
+        assert.equal(imported.queue.enabled, true);
+        assert.equal(imported.queue.max_size, 5000);
+        assert.equal(imported.queue.backpressure_threshold, 500);
+        assert.equal(imported.queue.max_capacity_reduction, 0.4);
+        assert.equal(imported.queue.request_timeout_ms, 10000);
+        assert.equal(imported.queue.retry_rate, 0.3);
     });
     it('preserves chaos config with failure events', () => {
         const config = makeConfig({

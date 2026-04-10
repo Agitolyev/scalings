@@ -303,6 +303,40 @@ class App {
                 queueStatCard.classList.add('hidden');
             }
         }
+        // Peak wait time stat
+        const waitStatCard = document.getElementById('stat-card-peak-wait');
+        if (waitStatCard) {
+            if (summary.peak_queue_wait_time_ms > 0) {
+                waitStatCard.classList.remove('hidden');
+                const waitMs = summary.peak_queue_wait_time_ms;
+                this.setSummaryValue('stat-peak-wait', waitMs >= 1000 ? `${(waitMs / 1000).toFixed(1)}s` : `${Math.round(waitMs)}ms`);
+            }
+            else {
+                waitStatCard.classList.add('hidden');
+            }
+        }
+        // Expired requests stat
+        const expiredStatCard = document.getElementById('stat-card-expired');
+        if (expiredStatCard) {
+            if (summary.total_expired > 0) {
+                expiredStatCard.classList.remove('hidden');
+                this.setSummaryValue('stat-expired', this.formatNumber(summary.total_expired));
+            }
+            else {
+                expiredStatCard.classList.add('hidden');
+            }
+        }
+        // Retry traffic stat
+        const retriesStatCard = document.getElementById('stat-card-retries');
+        if (retriesStatCard) {
+            if (summary.total_retries > 0) {
+                retriesStatCard.classList.remove('hidden');
+                this.setSummaryValue('stat-retries', this.formatNumber(summary.total_retries));
+            }
+            else {
+                retriesStatCard.classList.add('hidden');
+            }
+        }
         this.setSummaryValue('stat-underprov-time', `${summary.time_under_provisioned_seconds}s (${summary.time_under_provisioned_percent.toFixed(1)}%)`);
         this.setSummaryValue('stat-recovery-time', summary.time_to_recover_seconds !== null ? `${summary.time_to_recover_seconds}s` : 'N/A');
         this.setSummaryValue('stat-cost', `$${summary.estimated_total_cost.toFixed(4)}`);
@@ -338,6 +372,12 @@ class App {
             return { type: 'drop', category: 'traffic' };
         if (msg.startsWith('Recovered'))
             return { type: 'recover', category: 'traffic' };
+        if (msg.startsWith('Expired'))
+            return { type: 'expired', category: 'traffic' };
+        if (msg.startsWith('Backpressure'))
+            return { type: 'backpressure', category: 'traffic' };
+        if (msg.includes('will retry'))
+            return { type: 'retry', category: 'traffic' };
         return { type: 'info', category: 'scale' };
     }
     renderLog(snapshots) {

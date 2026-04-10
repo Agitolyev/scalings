@@ -25,6 +25,10 @@ export const DEFAULT_ADVANCED = {
 export const DEFAULT_QUEUE = {
     enabled: false,
     max_size: 1000,
+    backpressure_threshold: 0,
+    max_capacity_reduction: 0,
+    request_timeout_ms: 0,
+    retry_rate: 0,
 };
 export const DEFAULT_CHAOS = {
     pod_failure_rate: 0,
@@ -175,8 +179,42 @@ export const PRESET_SCENARIOS = [
                 params: { base_rps: 200, spike_rps: 2000, spike_start: 60, spike_duration: 90 },
             },
             queue: {
+                ...DEFAULT_QUEUE,
                 enabled: true,
                 max_size: 0,
+            },
+        },
+    },
+    {
+        name: 'Backpressure Death Spiral',
+        description: 'Queue backpressure degrades capacity under load, retries amplify traffic — demonstrates how deep queues cause cascading failures',
+        config: {
+            name: 'Backpressure Death Spiral',
+            scaling: {
+                ...DEFAULT_SCALING,
+                min_replicas: 3,
+                max_replicas: 30,
+                scale_up_threshold: 70,
+                scale_up_step: 3,
+                capacity_per_replica: 100,
+                startup_time: 30,
+            },
+            advanced: {
+                ...DEFAULT_ADVANCED,
+                cooldown_scale_up: 10,
+                metric_observation_delay: 10,
+            },
+            traffic: {
+                pattern: 'spike',
+                params: { base_rps: 200, spike_rps: 1500, spike_start: 30, spike_duration: 60 },
+            },
+            queue: {
+                enabled: true,
+                max_size: 5000,
+                backpressure_threshold: 500,
+                max_capacity_reduction: 0.4,
+                request_timeout_ms: 10000,
+                retry_rate: 0.3,
             },
         },
     },

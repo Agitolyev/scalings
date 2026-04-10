@@ -588,7 +588,7 @@ describe('SimulationService — queue mode (unlimited)', () => {
       simulation: { duration: 60, tick_interval: 1 },
       scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
       traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
-      queue: { enabled: true, max_size: 0 },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0 },
     });
     const result = await svc.run(config);
     assert.equal(result.summary.total_dropped, 0, 'unlimited queue should never drop');
@@ -600,7 +600,7 @@ describe('SimulationService — queue mode (unlimited)', () => {
       simulation: { duration: 30, tick_interval: 1 },
       scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
       traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
-      queue: { enabled: true, max_size: 0 },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0 },
     });
     const result = await svc.run(config);
     assert.ok(result.summary.peak_queue_depth > 0, 'queue should accumulate backlog');
@@ -619,7 +619,7 @@ describe('SimulationService — queue mode (unlimited)', () => {
         pattern: 'spike',
         params: { base_rps: 50, spike_rps: 1500, spike_start: 5, spike_duration: 20 } as SpikeParams,
       },
-      queue: { enabled: true, max_size: 0 },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0 },
     });
     const result = await svc.run(config);
     // Queue should build during spike then drain after
@@ -636,7 +636,7 @@ describe('SimulationService — queue mode (unlimited)', () => {
       simulation: { duration: 30, tick_interval: 1 },
       scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
       traffic: { pattern: 'steady', params: { rps: 300 } as SteadyParams },
-      queue: { enabled: true, max_size: 0 },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0 },
     });
     const result = await svc.run(config);
     const maxFromSnapshots = Math.max(...result.snapshots.map(s => s.queue_depth));
@@ -650,7 +650,7 @@ describe('SimulationService — queue mode (bounded)', () => {
       simulation: { duration: 60, tick_interval: 1 },
       scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
       traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
-      queue: { enabled: true, max_size: 200 },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 200 },
     });
     const result = await svc.run(config);
     assert.ok(result.summary.total_dropped > 0, 'bounded queue should eventually drop');
@@ -662,7 +662,7 @@ describe('SimulationService — queue mode (bounded)', () => {
       simulation: { duration: 60, tick_interval: 1 },
       scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
       traffic: { pattern: 'steady', params: { rps: 1000 } as SteadyParams },
-      queue: { enabled: true, max_size: 500 },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 500 },
     });
     const result = await svc.run(config);
     for (const snap of result.snapshots) {
@@ -681,8 +681,8 @@ describe('SimulationService — queue mode (bounded)', () => {
       },
     });
 
-    const oltpResult = await svc.run({ ...baseConfig, queue: { enabled: false, max_size: 0 } });
-    const queueResult = await svc.run({ ...baseConfig, queue: { enabled: true, max_size: 5000 } });
+    const oltpResult = await svc.run({ ...baseConfig, queue: { ...DEFAULT_QUEUE, enabled: false, max_size: 0 } });
+    const queueResult = await svc.run({ ...baseConfig, queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 5000 } });
 
     assert.ok(
       queueResult.summary.total_dropped <= oltpResult.summary.total_dropped,
@@ -697,7 +697,7 @@ describe('SimulationService — queue disabled', () => {
       simulation: { duration: 30, tick_interval: 1 },
       scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
       traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
-      queue: { enabled: false, max_size: 1000 },
+      queue: { ...DEFAULT_QUEUE, enabled: false, max_size: 1000 },
     });
     const result = await svc.run(config);
     for (const snap of result.snapshots) {
@@ -711,7 +711,7 @@ describe('SimulationService — queue disabled', () => {
       simulation: { duration: 30, tick_interval: 1 },
       scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
       traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
-      queue: { enabled: false, max_size: 0 },
+      queue: { ...DEFAULT_QUEUE, enabled: false, max_size: 0 },
     });
     const result = await svc.run(config);
     for (const snap of result.snapshots) {
@@ -730,7 +730,7 @@ describe('SimulationService — queue log entries', () => {
       simulation: { duration: 10, tick_interval: 1 },
       scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
       traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
-      queue: { enabled: true, max_size: 0 },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0 },
     });
     const result = await svc.run(config);
     const queueLogs = result.snapshots.flatMap(s => s.log_entries).filter(l => l.includes('Queue depth'));
@@ -743,10 +743,246 @@ describe('SimulationService — queue log entries', () => {
       simulation: { duration: 30, tick_interval: 1 },
       scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
       traffic: { pattern: 'steady', params: { rps: 1000 } as SteadyParams },
-      queue: { enabled: true, max_size: 100 },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 100 },
     });
     const result = await svc.run(config);
     const fullLogs = result.snapshots.flatMap(s => s.log_entries).filter(l => l.includes('Queue full'));
     assert.ok(fullLogs.length > 0, 'should log when queue is full and dropping');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Backpressure model — capacity degradation, request expiry, retries
+// ---------------------------------------------------------------------------
+describe('SimulationService — backpressure capacity degradation', () => {
+  it('reduces effective capacity when queue exceeds backpressure threshold', async () => {
+    const config = makeConfig({
+      simulation: { duration: 30, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0, backpressure_threshold: 100, max_capacity_reduction: 0.5 },
+    });
+    const result = await svc.run(config);
+
+    // Queue grows, so effective capacity should eventually drop below base capacity
+    const degradedTicks = result.snapshots.filter(s => s.effective_capacity_rps < s.capacity_rps);
+    assert.ok(degradedTicks.length > 0, 'should have ticks where effective capacity < base capacity');
+
+    // Effective capacity should be lower when queue is deeper
+    const lastSnap = result.snapshots[result.snapshots.length - 1];
+    assert.ok(lastSnap.effective_capacity_rps < 100, `effective capacity (${lastSnap.effective_capacity_rps}) should be less than base (100)`);
+  });
+
+  it('does not degrade capacity when queue is below threshold', async () => {
+    const config = makeConfig({
+      simulation: { duration: 10, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 120 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0, backpressure_threshold: 10000, max_capacity_reduction: 0.5 },
+    });
+    const result = await svc.run(config);
+
+    // Queue will grow slowly but stay well below 10000 threshold
+    for (const snap of result.snapshots) {
+      assert.equal(snap.effective_capacity_rps, snap.capacity_rps,
+        `t=${snap.time}: effective capacity should equal base when queue (${snap.queue_depth}) is below threshold`);
+    }
+  });
+
+  it('caps capacity reduction at max_capacity_reduction', async () => {
+    const config = makeConfig({
+      simulation: { duration: 60, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 1000 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0, backpressure_threshold: 50, max_capacity_reduction: 0.3 },
+    });
+    const result = await svc.run(config);
+
+    // Even with massive queue, effective capacity should never drop below 70% of base
+    for (const snap of result.snapshots) {
+      assert.ok(snap.effective_capacity_rps >= 70 - 0.01,
+        `t=${snap.time}: effective capacity (${snap.effective_capacity_rps}) should be >= 70 (70% of 100)`);
+    }
+  });
+
+  it('backpressure is disabled when threshold is 0', async () => {
+    const config = makeConfig({
+      simulation: { duration: 20, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0, backpressure_threshold: 0, max_capacity_reduction: 0.5 },
+    });
+    const result = await svc.run(config);
+    for (const snap of result.snapshots) {
+      assert.equal(snap.effective_capacity_rps, snap.capacity_rps,
+        `t=${snap.time}: no degradation when threshold is 0`);
+    }
+  });
+});
+
+describe('SimulationService — queue wait time', () => {
+  it('calculates wait time proportional to queue depth', async () => {
+    const config = makeConfig({
+      simulation: { duration: 20, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0 },
+    });
+    const result = await svc.run(config);
+
+    // Wait time should increase as queue grows
+    const midWait = result.snapshots[10].queue_wait_time_ms;
+    const endWait = result.snapshots[19].queue_wait_time_ms;
+    assert.ok(endWait > midWait, `wait time should grow: mid=${midWait}ms, end=${endWait}ms`);
+    assert.ok(result.summary.peak_queue_wait_time_ms > 0, 'peak wait time should be > 0');
+    assert.ok(result.summary.avg_queue_wait_time_ms > 0, 'avg wait time should be > 0');
+  });
+
+  it('wait time is 0 when queue is empty', async () => {
+    const config = makeConfig({
+      simulation: { duration: 10, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 10, max_replicas: 10, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 50 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0 },
+    });
+    const result = await svc.run(config);
+    for (const snap of result.snapshots) {
+      assert.equal(snap.queue_wait_time_ms, 0, `t=${snap.time}: wait time should be 0 when queue is empty`);
+    }
+  });
+});
+
+describe('SimulationService — request timeout/expiry', () => {
+  it('expires requests that exceed the timeout', async () => {
+    const config = makeConfig({
+      simulation: { duration: 30, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0, request_timeout_ms: 2000 },
+    });
+    const result = await svc.run(config);
+
+    const totalExpired = result.snapshots.reduce((acc, s) => acc + s.expired_requests, 0);
+    assert.ok(totalExpired > 0, 'should expire requests when wait time exceeds timeout');
+    assert.ok(result.summary.total_expired > 0, 'summary should track total expired');
+  });
+
+  it('limits queue growth compared to no timeout', async () => {
+    const baseConfig = makeConfig({
+      simulation: { duration: 30, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0 },
+    });
+
+    const noTimeout = await svc.run(baseConfig);
+    const withTimeout = await svc.run({
+      ...baseConfig,
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0, request_timeout_ms: 2000 },
+    });
+
+    // Timeout should significantly limit queue growth vs unbounded
+    assert.ok(
+      withTimeout.summary.peak_queue_depth < noTimeout.summary.peak_queue_depth,
+      `timeout peak (${withTimeout.summary.peak_queue_depth}) should be less than no-timeout peak (${noTimeout.summary.peak_queue_depth})`
+    );
+
+    // Queue should reach a steady state rather than growing unboundedly
+    const lastSnap = withTimeout.snapshots[withTimeout.snapshots.length - 1];
+    const midSnap = withTimeout.snapshots[Math.floor(withTimeout.snapshots.length / 2)];
+    // With timeout, queue should plateau rather than growing linearly
+    assert.ok(
+      lastSnap.queue_depth < noTimeout.snapshots[noTimeout.snapshots.length - 1].queue_depth,
+      'timeout queue should be smaller than unbounded at end'
+    );
+  });
+
+  it('does not expire when timeout is 0 (disabled)', async () => {
+    const config = makeConfig({
+      simulation: { duration: 20, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0, request_timeout_ms: 0 },
+    });
+    const result = await svc.run(config);
+    for (const snap of result.snapshots) {
+      assert.equal(snap.expired_requests, 0, `t=${snap.time}: no expiry when timeout is 0`);
+    }
+  });
+});
+
+describe('SimulationService — retry storms', () => {
+  it('retries amplify traffic when enabled', async () => {
+    const config = makeConfig({
+      simulation: { duration: 30, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 200, retry_rate: 0.5 },
+    });
+    const result = await svc.run(config);
+
+    // Retry traffic should appear after the first drops
+    const retryTicks = result.snapshots.filter(s => s.retry_requests > 0);
+    assert.ok(retryTicks.length > 0, 'should have ticks with retry traffic');
+    assert.ok(result.summary.total_retries > 0, 'summary should track total retries');
+  });
+
+  it('no retries when retry_rate is 0', async () => {
+    const config = makeConfig({
+      simulation: { duration: 20, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 200, retry_rate: 0 },
+    });
+    const result = await svc.run(config);
+    for (const snap of result.snapshots) {
+      assert.equal(snap.retry_requests, 0, `t=${snap.time}: no retries when rate is 0`);
+    }
+  });
+
+  it('retries from expired requests trigger when both timeout and retry are configured', async () => {
+    const config = makeConfig({
+      simulation: { duration: 30, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams },
+      queue: { ...DEFAULT_QUEUE, enabled: true, max_size: 0, request_timeout_ms: 2000, retry_rate: 0.3 },
+    });
+    const result = await svc.run(config);
+
+    // Both expiry and retries should be present
+    assert.ok(result.summary.total_expired > 0, 'should have expired requests');
+    assert.ok(result.summary.total_retries > 0, 'expired requests should trigger retries');
+  });
+});
+
+describe('SimulationService — backpressure new snapshot fields', () => {
+  it('includes all new fields in snapshots with defaults', async () => {
+    const config = makeConfig({
+      simulation: { duration: 5, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 50 } as SteadyParams },
+    });
+    const result = await svc.run(config);
+    for (const snap of result.snapshots) {
+      assert.equal(typeof snap.queue_wait_time_ms, 'number');
+      assert.equal(typeof snap.expired_requests, 'number');
+      assert.equal(typeof snap.retry_requests, 'number');
+      assert.equal(typeof snap.effective_capacity_rps, 'number');
+      assert.equal(snap.expired_requests, 0);
+      assert.equal(snap.retry_requests, 0);
+    }
+  });
+
+  it('includes all new fields in summary with defaults', async () => {
+    const config = makeConfig({
+      simulation: { duration: 5, tick_interval: 1 },
+      scaling: { ...DEFAULT_SCALING, min_replicas: 1, max_replicas: 1, capacity_per_replica: 100 },
+      traffic: { pattern: 'steady', params: { rps: 50 } as SteadyParams },
+    });
+    const result = await svc.run(config);
+    assert.equal(typeof result.summary.avg_queue_wait_time_ms, 'number');
+    assert.equal(typeof result.summary.peak_queue_wait_time_ms, 'number');
+    assert.equal(typeof result.summary.total_expired, 'number');
+    assert.equal(typeof result.summary.total_retries, 'number');
   });
 });

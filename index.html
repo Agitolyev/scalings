@@ -93,6 +93,7 @@
           <button class="preset-btn" data-preset="Noisy Neighbor">Noisy Neighbor</button>
           <button class="preset-btn" data-preset="Step Migration">Step Migration</button>
           <button class="preset-btn" data-preset="Bottomless Queue">Bottomless Queue</button>
+          <button class="preset-btn" data-preset="Backpressure Death Spiral">Backpressure Death Spiral</button>
           <button class="preset-btn preset-btn--reset" id="btn-reset-defaults" title="Reset all parameters to HPA defaults">Reset to Defaults</button>
         </div>
       </section>
@@ -264,6 +265,30 @@
           <span class="unit" id="queue-size-unit">req</span>
           <button id="queue-unlimited-btn" class="btn btn-small btn-secondary" title="Toggle unlimited queue (no drops)">Unlimited</button>
           <button class="tooltip-btn" data-tooltip="Maximum number of requests that can wait in the queue. When the queue is full, new requests are dropped. Set to 0 for unlimited (no drops ever — pure backpressure).">?</button>
+        </div>
+        <div class="param-row">
+          <label for="param-queue_backpressure_threshold" title="Queue depth at which capacity starts degrading. Models memory pressure, GC pauses, and context switching under deep queue. 0 = no degradation.">Backpressure Threshold</label>
+          <input type="number" id="param-queue_backpressure_threshold" min="0" max="100000" value="0" aria-label="Backpressure threshold" title="Queue depth at which capacity starts degrading. Degradation reaches maximum at 2x this value. 0 = disabled.">
+          <span class="unit">req</span>
+          <button class="tooltip-btn" data-tooltip="When queue depth exceeds this threshold, serving capacity degrades linearly (simulating memory pressure, GC pauses, context switching). The degradation reaches the maximum reduction at 2x this value. Set to 0 to disable backpressure degradation.">?</button>
+        </div>
+        <div class="param-row">
+          <label for="param-queue_max_capacity_reduction" title="Maximum fraction of capacity lost due to backpressure (0-1). For example, 0.3 means up to 30% capacity loss when queue is deeply backed up.">Max Capacity Reduction</label>
+          <input type="number" id="param-queue_max_capacity_reduction" min="0" max="1" step="0.05" value="0" aria-label="Max capacity reduction" title="Maximum capacity reduction from backpressure (0-1). 0.3 = up to 30% capacity loss at peak queue depth.">
+          <span class="unit">ratio</span>
+          <button class="tooltip-btn" data-tooltip="Maximum fraction of serving capacity that can be lost due to queue backpressure. E.g., 0.3 means capacity can drop to 70% of normal when queue is deeply backed up. This creates a realistic feedback loop: deep queue → slower processing → even deeper queue.">?</button>
+        </div>
+        <div class="param-row">
+          <label for="param-queue_request_timeout_ms" title="Maximum time (ms) a request can wait in the queue before being expired/dropped. Models client-side timeouts. 0 = no timeout.">Request Timeout</label>
+          <input type="number" id="param-queue_request_timeout_ms" min="0" max="300000" step="1000" value="0" aria-label="Request timeout in milliseconds" title="Max wait time in milliseconds before a queued request is expired. Models client timeouts. 0 = no timeout.">
+          <span class="unit">ms</span>
+          <button class="tooltip-btn" data-tooltip="Maximum time a request waits in the queue before being expired (dropped). Models client-side timeouts — after this duration, the client has already given up. Expired requests are removed from the queue and may trigger retries. 0 = no timeout.">?</button>
+        </div>
+        <div class="param-row">
+          <label for="param-queue_retry_rate" title="Fraction of dropped/expired requests that retry next tick (0-1). Models retry storms — when clients retry failed requests, they amplify the traffic load.">Retry Rate</label>
+          <input type="number" id="param-queue_retry_rate" min="0" max="1" step="0.05" value="0" aria-label="Retry rate" title="Fraction of dropped/expired requests that retry next tick (0-1). 0.3 = 30% of failures retry.">
+          <span class="unit">ratio</span>
+          <button class="tooltip-btn" data-tooltip="Fraction of dropped or expired requests that re-enter as new traffic on the next tick. Models retry storms: when clients retry failed requests, they amplify the traffic load and can cause cascading failures. 0 = no retries. 0.3 = 30% of failures retry.">?</button>
         </div>
       </div>
     </section>
@@ -449,6 +474,18 @@
           <div class="stat-card queue-stat hidden" id="stat-card-peak-queue">
             <div class="stat-label">Peak Queue Depth</div>
             <div class="stat-value" id="stat-peak-queue">-</div>
+          </div>
+          <div class="stat-card queue-stat hidden" id="stat-card-peak-wait">
+            <div class="stat-label">Peak Wait Time</div>
+            <div class="stat-value" id="stat-peak-wait">-</div>
+          </div>
+          <div class="stat-card queue-stat hidden" id="stat-card-expired">
+            <div class="stat-label">Expired (Timeout)</div>
+            <div class="stat-value" id="stat-expired">-</div>
+          </div>
+          <div class="stat-card queue-stat hidden" id="stat-card-retries">
+            <div class="stat-label">Retry Traffic</div>
+            <div class="stat-value" id="stat-retries">-</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Under-provisioned</div>

@@ -175,6 +175,10 @@ export class LocalConfigService implements ConfigService {
     return {
       enabled: typeof obj.enabled === 'boolean' ? obj.enabled : d.enabled,
       max_size: this.num(obj.max_size, d.max_size),
+      backpressure_threshold: this.num(obj.backpressure_threshold, d.backpressure_threshold),
+      max_capacity_reduction: this.num(obj.max_capacity_reduction, d.max_capacity_reduction),
+      request_timeout_ms: this.num(obj.request_timeout_ms, d.request_timeout_ms),
+      retry_rate: this.num(obj.retry_rate, d.retry_rate),
     };
   }
 
@@ -236,6 +240,10 @@ export class LocalConfigService implements ConfigService {
     lines.push('queue:');
     lines.push(`  enabled: ${config.queue.enabled}`);
     lines.push(`  max_size: ${config.queue.max_size}`);
+    lines.push(`  backpressure_threshold: ${config.queue.backpressure_threshold}`);
+    lines.push(`  max_capacity_reduction: ${config.queue.max_capacity_reduction}`);
+    lines.push(`  request_timeout_ms: ${config.queue.request_timeout_ms}`);
+    lines.push(`  retry_rate: ${config.queue.retry_rate}`);
     lines.push('');
     lines.push('traffic:');
     lines.push(`  pattern: ${config.traffic.pattern}`);

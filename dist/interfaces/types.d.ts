@@ -28,6 +28,10 @@ export interface AdvancedParams {
 export interface QueueConfig {
     enabled: boolean;
     max_size: number;
+    backpressure_threshold: number;
+    max_capacity_reduction: number;
+    request_timeout_ms: number;
+    retry_rate: number;
 }
 export interface FailureEvent {
     time: number;
@@ -110,6 +114,10 @@ export interface TickSnapshot {
     served_requests: number;
     dropped_requests: number;
     queue_depth: number;
+    queue_wait_time_ms: number;
+    expired_requests: number;
+    retry_requests: number;
+    effective_capacity_rps: number;
     utilization: number;
     delayed_utilization: number;
     estimated_cost: number;
@@ -128,6 +136,10 @@ export interface SimulationSummary {
     peak_pod_count: number;
     min_pod_count: number;
     peak_queue_depth: number;
+    avg_queue_wait_time_ms: number;
+    peak_queue_wait_time_ms: number;
+    total_expired: number;
+    total_retries: number;
     time_under_provisioned_seconds: number;
     time_under_provisioned_percent: number;
     time_to_recover_seconds: number | null;
