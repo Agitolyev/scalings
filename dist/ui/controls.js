@@ -15,7 +15,6 @@ export class UIControls {
         this.bindPatternSelector();
         this.bindAdvancedToggle();
         this.bindChaosToggle();
-        this.bindBackpressureToggle();
         this.bindPresets();
         this.bindPlatformSelector();
         this.bindStepControls();
@@ -329,9 +328,6 @@ export class UIControls {
     }
     bindAdvancedToggle() {
         this.bindCollapsibleSection('advanced-toggle', 'advanced-content');
-    }
-    bindBackpressureToggle() {
-        this.bindCollapsibleSection('backpressure-toggle', 'backpressure-content');
     }
     bindPresets() {
         const container = document.getElementById('preset-buttons');

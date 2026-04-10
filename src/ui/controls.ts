@@ -41,7 +41,6 @@ export class UIControls {
     this.bindPatternSelector();
     this.bindAdvancedToggle();
     this.bindChaosToggle();
-    this.bindBackpressureToggle();
     this.bindPresets();
     this.bindPlatformSelector();
     this.bindStepControls();
@@ -387,10 +386,6 @@ export class UIControls {
 
   private bindAdvancedToggle(): void {
     this.bindCollapsibleSection('advanced-toggle', 'advanced-content');
-  }
-
-  private bindBackpressureToggle(): void {
-    this.bindCollapsibleSection('backpressure-toggle', 'backpressure-content');
   }
 
   private bindPresets(): void {

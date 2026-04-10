@@ -26,7 +26,6 @@ export declare class UIControls {
     private bindSliders;
     private bindPatternSelector;
     private bindAdvancedToggle;
-    private bindBackpressureToggle;
     private bindPresets;
     private bindPlatformSelector;
     private bindStepControls;
