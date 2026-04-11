@@ -1,6 +1,21 @@
 // ============================================================================
 // scalings.xyz — Chart Rendering and Animation
 // ============================================================================
+// --- Exported formatting helpers (testable without DOM/Chart.js) ---
+/** Format seconds into M:SS display string */
+export function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
+/** Format a tooltip label based on dataset type */
+export function formatTooltipLabel(datasetLabel, value) {
+    if (datasetLabel.includes('Pods'))
+        return ` ${datasetLabel}: ${value}`;
+    if (datasetLabel.includes('Wait'))
+        return ` ${datasetLabel}: ${value >= 1000 ? (value / 1000).toFixed(1) + 's' : Math.round(value) + 'ms'}`;
+    return ` ${datasetLabel}: ${Math.round(value).toLocaleString()}`;
+}
 const COLORS = {
     traffic: 'rgba(0, 212, 255, 0.9)',
     trafficFill: 'rgba(0, 212, 255, 0.15)',
@@ -100,7 +115,7 @@ export class ChartRenderer {
             },
         };
     }
-    buildPlugins(withTooltipCallbacks = false) {
+    buildPlugins() {
         const tooltip = {
             backgroundColor: 'rgba(10, 14, 26, 0.95)',
             titleColor: '#00d4ff',
@@ -110,18 +125,17 @@ export class ChartRenderer {
             titleFont: { family: "'JetBrains Mono', monospace", size: 12 },
             bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
             padding: 12,
-        };
-        if (withTooltipCallbacks) {
-            tooltip.callbacks = {
-                label: (context) => {
-                    const label = context.dataset.label || '';
-                    const value = context.parsed.y;
-                    if (label.includes('Pods'))
-                        return `${label}: ${value}`;
-                    return `${label}: ${Math.round(value).toLocaleString()}`;
+            callbacks: {
+                title: (items) => {
+                    if (!items.length)
+                        return '';
+                    return `Time: ${items[0].label}`;
                 },
-            };
-        }
+                label: (context) => {
+                    return formatTooltipLabel(context.dataset.label || '', context.parsed.y);
+                },
+            },
+        };
         return {
             legend: {
                 labels: {
@@ -290,7 +304,7 @@ export class ChartRenderer {
         this.chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: snapshots.map(s => this.formatTime(s.time)),
+                labels: snapshots.map(s => formatTime(s.time)),
                 datasets,
             },
             options: {
@@ -298,7 +312,7 @@ export class ChartRenderer {
                 maintainAspectRatio: false,
                 animation: false,
                 interaction: { mode: 'index', intersect: false },
-                plugins: this.buildPlugins(true),
+                plugins: this.buildPlugins(),
                 scales: this.buildScales(),
             },
         });
@@ -370,7 +384,7 @@ export class ChartRenderer {
         this.chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: snapshots.map(s => this.formatTime(s.time)),
+                labels: snapshots.map(s => formatTime(s.time)),
                 datasets,
             },
             options: {
@@ -405,7 +419,7 @@ export class ChartRenderer {
         ];
         // Use the longest run for labels
         const longest = runs.reduce((a, b) => a.result.snapshots.length >= b.result.snapshots.length ? a : b);
-        const labels = longest.result.snapshots.map(s => this.formatTime(s.time));
+        const labels = longest.result.snapshots.map(s => formatTime(s.time));
         // Traffic from the latest run (shared x-axis)
         const latestRun = runs[runs.length - 1];
         const datasets = [
@@ -477,11 +491,6 @@ export class ChartRenderer {
             this.chart = null;
         }
     }
-    formatTime(seconds) {
-        const m = Math.floor(seconds / 60);
-        const s = Math.floor(seconds % 60);
-        return `${m}:${s.toString().padStart(2, '0')}`;
-    }
 }
 // --- Traffic Preview (small inline chart) ---
 export class TrafficPreviewRenderer {
@@ -498,13 +507,14 @@ export class TrafficPreviewRenderer {
         const ctx = canvas.getContext('2d');
         if (!ctx)
             return;
-        const labels = data.map((_, i) => i.toString());
+        const labels = data.map((_, i) => formatTime(i));
         this.chart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels,
                 datasets: [
                     {
+                        label: 'Traffic (RPS)',
                         data,
                         borderColor: COLORS.traffic,
                         backgroundColor: COLORS.trafficFill,
@@ -519,14 +529,49 @@ export class TrafficPreviewRenderer {
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: { duration: 300 },
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
-                    tooltip: { enabled: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 14, 26, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e2e8f0',
+                        borderColor: 'rgba(0, 212, 255, 0.3)',
+                        borderWidth: 1,
+                        titleFont: { family: "'JetBrains Mono', monospace", size: 11 },
+                        bodyFont: { family: "'JetBrains Mono', monospace", size: 10 },
+                        padding: 8,
+                        callbacks: {
+                            title: (items) => {
+                                if (!items.length)
+                                    return '';
+                                return `Time: ${items[0].label}`;
+                            },
+                            label: (context) => {
+                                return formatTooltipLabel(context.dataset.label || 'Traffic (RPS)', context.parsed.y);
+                            },
+                        },
+                    },
                 },
                 scales: {
-                    x: { display: false },
+                    x: {
+                        display: true,
+                        ticks: {
+                            color: '#475569',
+                            font: { family: "'JetBrains Mono', monospace", size: 8 },
+                            maxTicksLimit: 5,
+                            maxRotation: 0,
+                        },
+                        grid: { display: false },
+                    },
                     y: {
                         display: true,
+                        title: {
+                            display: true,
+                            text: 'RPS',
+                            color: '#475569',
+                            font: { family: "'JetBrains Mono', monospace", size: 8 },
+                        },
                         ticks: {
                             color: '#475569',
                             font: { family: "'JetBrains Mono', monospace", size: 9 },
