@@ -625,9 +625,24 @@ export class TrafficPreviewRenderer {
           },
         },
         scales: {
-          x: { display: false },
+          x: {
+            display: true,
+            ticks: {
+              color: '#475569',
+              font: { family: "'JetBrains Mono', monospace", size: 8 },
+              maxTicksLimit: 5,
+              maxRotation: 0,
+            },
+            grid: { display: false },
+          },
           y: {
             display: true,
+            title: {
+              display: true,
+              text: 'RPS',
+              color: '#475569',
+              font: { family: "'JetBrains Mono', monospace", size: 8 },
+            },
             ticks: {
               color: '#475569',
               font: { family: "'JetBrains Mono', monospace", size: 9 },
