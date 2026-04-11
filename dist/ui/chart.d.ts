@@ -34,6 +34,7 @@ export declare class ChartRenderer {
 }
 export declare class TrafficPreviewRenderer {
     private chart;
+    private formatTime;
     render(canvasId: string, data: number[]): void;
     destroy(): void;
 }
