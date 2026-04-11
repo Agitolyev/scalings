@@ -16,6 +16,7 @@ import {
   WaveParams,
   StepParams,
   CustomParams,
+  CustomTimePoint,
   StepEntry,
   FailureEvent,
   RetryStrategy,
@@ -33,6 +34,7 @@ export class UIControls {
   private previewRenderer: TrafficPreviewRenderer;
   private onChangeCallbacks: ChangeCallback[] = [];
   private currentPattern: TrafficPatternType = 'spike';
+  private pendingCsvText: string | null = null;
 
   constructor(trafficService: TrafficPatternService) {
     this.trafficService = trafficService;
@@ -418,6 +420,10 @@ export class UIControls {
     const trafficInputs = document.querySelectorAll('[id^="traffic-"] input, [id^="traffic-"] textarea');
     trafficInputs.forEach(input => {
       input.addEventListener('input', () => {
+        // Manual edits to the custom series textarea invalidate pending CSV
+        if ((input as HTMLElement).id === 'traffic-custom-series') {
+          this.pendingCsvText = null;
+        }
         this.notifyChange();
         this.updatePreview();
       });
@@ -580,6 +586,7 @@ export class UIControls {
     const importBtn = document.getElementById('btn-import-csv');
     const fileInput = document.getElementById('csv-file-input') as HTMLInputElement;
     const textarea = document.getElementById('traffic-custom-series') as HTMLTextAreaElement;
+    const unitSelect = document.getElementById('csv-value-unit') as HTMLSelectElement;
 
     if (importBtn && fileInput) {
       importBtn.addEventListener('click', () => fileInput.click());
@@ -595,6 +602,15 @@ export class UIControls {
       });
     }
 
+    // Re-parse with new unit when dropdown changes while raw CSV is in memory
+    if (unitSelect) {
+      unitSelect.addEventListener('change', () => {
+        if (this.pendingCsvText) {
+          this.reapplyCsvWithUnit(this.getCsvValueUnit());
+        }
+      });
+    }
+
     // Auto-detect CSV when pasting into the textarea
     if (textarea) {
       textarea.addEventListener('paste', (e) => {
@@ -604,15 +620,7 @@ export class UIControls {
           // If it starts with a header-like row (not [ or {), try CSV parse
           if (content && !content.startsWith('[') && !content.startsWith('{')) {
             try {
-              const guess = detectCsvValueUnit(content);
-              this.setCsvValueUnit(guess.unit);
-              const series = parseGrafanaCSV(content, guess.unit);
-              textarea.value = JSON.stringify(series, null, 2);
-              const unitLabel = guess.unit === 'rps' ? '' : ` as ${guess.unit.toUpperCase()}`;
-              this.setCsvStatus(`Parsed ${series.length} points${unitLabel} — ${guess.reason}. Change unit above if incorrect.`, false);
-              this.selectPattern('custom');
-              this.notifyChange();
-              this.updatePreview();
+              this.applyCsvImport(content);
             } catch {
               // Not valid CSV either — leave as-is for the user to fix
             }
@@ -623,15 +631,30 @@ export class UIControls {
   }
 
   private applyCsvImport(csvText: string): void {
-    const textarea = document.getElementById('traffic-custom-series') as HTMLTextAreaElement;
-    if (!textarea) return;
+    // Store raw CSV so unit changes can re-parse instantly
+    this.pendingCsvText = csvText;
 
-    // Auto-detect unit from the data, then let the user override via dropdown
+    // Auto-detect unit from the data
     const guess = detectCsvValueUnit(csvText);
     this.setCsvValueUnit(guess.unit);
 
-    const series = parseGrafanaCSV(csvText, guess.unit);
-    textarea.value = JSON.stringify(series, null, 2);
+    const series = this.convertCsvToSeries(csvText, guess.unit);
+    this.selectPattern('custom');
+    const unitLabel = guess.unit === 'rps' ? '' : ` as ${guess.unit.toUpperCase()}`;
+    this.setCsvStatus(`Imported ${series.length} points${unitLabel} — ${guess.reason}. Change unit if incorrect.`, false);
+  }
+
+  private reapplyCsvWithUnit(unit: 'rps' | 'rpm' | 'rph'): void {
+    if (!this.pendingCsvText) return;
+    const series = this.convertCsvToSeries(this.pendingCsvText, unit);
+    const label = unit.toUpperCase();
+    this.setCsvStatus(`Re-converted ${series.length} points as ${label}.`, false);
+  }
+
+  private convertCsvToSeries(csvText: string, unit: 'rps' | 'rpm' | 'rph'): CustomTimePoint[] {
+    const textarea = document.getElementById('traffic-custom-series') as HTMLTextAreaElement;
+    const series = parseGrafanaCSV(csvText, unit);
+    if (textarea) textarea.value = JSON.stringify(series, null, 2);
 
     // Auto-adjust simulation duration to match the series
     const lastT = series[series.length - 1].t;
@@ -640,11 +663,9 @@ export class UIControls {
       if (durationInput) durationInput.value = String(lastT);
     }
 
-    this.selectPattern('custom');
-    const unitLabel = guess.unit === 'rps' ? '' : ` as ${guess.unit.toUpperCase()}`;
-    this.setCsvStatus(`Imported ${series.length} points${unitLabel} — ${guess.reason}. Change unit above if incorrect.`, false);
     this.notifyChange();
     this.updatePreview();
+    return series;
   }
 
   private selectPattern(pattern: TrafficPatternType): void {

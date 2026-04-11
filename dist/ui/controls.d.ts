@@ -6,6 +6,7 @@ export declare class UIControls {
     private previewRenderer;
     private onChangeCallbacks;
     private currentPattern;
+    private pendingCsvText;
     constructor(trafficService: TrafficPatternService);
     init(): void;
     onChange(cb: ChangeCallback): void;
@@ -40,6 +41,8 @@ export declare class UIControls {
     private setCsvValueUnit;
     private bindCsvImport;
     private applyCsvImport;
+    private reapplyCsvWithUnit;
+    private convertCsvToSeries;
     private selectPattern;
     private setCsvStatus;
     private updateBrokerSizeUI;
