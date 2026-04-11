@@ -76,14 +76,19 @@ export class UIControls {
     }
     // --- Client config helpers ---
     getClientConfig() {
+        const strategySelect = document.getElementById('param-retry_strategy');
         return {
             max_retries: this.getNumericValue('param-max_retries', DEFAULT_CONFIG.client.max_retries),
             retry_delay: this.getNumericValue('param-retry_delay', DEFAULT_CONFIG.client.retry_delay),
+            retry_strategy: strategySelect?.value || DEFAULT_CONFIG.client.retry_strategy,
         };
     }
     setClientConfig(client) {
         this.setNumericValue('param-max_retries', client.max_retries);
         this.setNumericValue('param-retry_delay', client.retry_delay);
+        const strategySelect = document.getElementById('param-retry_strategy');
+        if (strategySelect)
+            strategySelect.value = client.retry_strategy || 'fixed';
     }
     // --- Broker config helpers ---
     getBrokerConfig() {
@@ -306,6 +311,13 @@ export class UIControls {
                 }
                 this.notifyChange();
                 this.updatePreview();
+            });
+        });
+        // Bind select elements in param rows (e.g., retry strategy)
+        const paramSelects = document.querySelectorAll('.param-row select');
+        paramSelects.forEach(select => {
+            select.addEventListener('change', () => {
+                this.notifyChange();
             });
         });
         // Also bind standalone number inputs (sim duration, tick interval)

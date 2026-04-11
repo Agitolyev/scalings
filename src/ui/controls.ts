@@ -18,6 +18,7 @@ import {
   CustomParams,
   StepEntry,
   FailureEvent,
+  RetryStrategy,
   DEFAULT_CONFIG,
   PRESET_SCENARIOS,
 } from '../interfaces/types.js';
@@ -120,15 +121,19 @@ export class UIControls {
   // --- Client config helpers ---
 
   private getClientConfig(): ClientConfig {
+    const strategySelect = document.getElementById('param-retry_strategy') as HTMLSelectElement;
     return {
       max_retries: this.getNumericValue('param-max_retries', DEFAULT_CONFIG.client.max_retries),
       retry_delay: this.getNumericValue('param-retry_delay', DEFAULT_CONFIG.client.retry_delay),
+      retry_strategy: (strategySelect?.value as RetryStrategy) || DEFAULT_CONFIG.client.retry_strategy,
     };
   }
 
   private setClientConfig(client: ClientConfig): void {
     this.setNumericValue('param-max_retries', client.max_retries);
     this.setNumericValue('param-retry_delay', client.retry_delay);
+    const strategySelect = document.getElementById('param-retry_strategy') as HTMLSelectElement;
+    if (strategySelect) strategySelect.value = client.retry_strategy || 'fixed';
   }
 
   // --- Broker config helpers ---
@@ -365,6 +370,14 @@ export class UIControls {
         }
         this.notifyChange();
         this.updatePreview();
+      });
+    });
+
+    // Bind select elements in param rows (e.g., retry strategy)
+    const paramSelects = document.querySelectorAll('.param-row select');
+    paramSelects.forEach(select => {
+      select.addEventListener('change', () => {
+        this.notifyChange();
       });
     });
 

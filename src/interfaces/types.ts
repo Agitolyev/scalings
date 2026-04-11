@@ -25,9 +25,12 @@ export interface ProducerConfig {
 
 // --- Client: resilience behavior (retries, etc.) ---
 
+export type RetryStrategy = 'fixed' | 'exponential' | 'exponential-jitter';
+
 export interface ClientConfig {
   max_retries: number;        // max retry attempts per request (0 = no retries)
-  retry_delay: number;        // seconds between failure and retry (0 = next tick)
+  retry_delay: number;        // base seconds between failure and retry (0 = next tick)
+  retry_strategy: RetryStrategy; // how delay scales with attempt number
 }
 
 // --- Broker: optional message queue between producer and service ---
@@ -257,6 +260,7 @@ export const DEFAULT_PRODUCER: ProducerConfig = {
 export const DEFAULT_CLIENT: ClientConfig = {
   max_retries: 0,
   retry_delay: 0,
+  retry_strategy: 'fixed',
 };
 
 export const DEFAULT_BROKER: BrokerConfig = {
@@ -464,6 +468,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
       client: {
         max_retries: 3,
         retry_delay: 2,
+        retry_strategy: 'fixed',
       },
     },
   },
@@ -495,6 +500,7 @@ export const PRESET_SCENARIOS: PresetScenario[] = [
       client: {
         max_retries: 3,
         retry_delay: 2,
+        retry_strategy: 'fixed',
       },
       broker: {
         enabled: true,

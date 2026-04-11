@@ -415,10 +415,21 @@
             </div>
 
             <div class="param-row">
-              <label for="param-retry_delay" title="Seconds between a failure and the retry attempt. 0 = retry on next tick.">Retry Delay</label>
-              <input type="number" id="param-retry_delay" min="0" max="60" value="0" aria-label="Retry delay" title="Seconds a client waits before retrying a failed request. 0 = immediate (next tick).">
+              <label for="param-retry_delay" title="Base seconds between a failure and the retry attempt. 0 = retry on next tick.">Retry Delay</label>
+              <input type="number" id="param-retry_delay" min="0" max="60" value="0" aria-label="Retry delay" title="Base seconds a client waits before retrying a failed request. For exponential strategies this is the base delay that doubles per attempt.">
               <span class="unit">s</span>
-              <button class="tooltip-btn" data-tooltip="Seconds between a request failing and the client retrying it. Models backoff behavior. 0 = retry on the very next tick (aggressive). Higher values spread retries over time, reducing the spike but prolonging the storm.">?</button>
+              <button class="tooltip-btn" data-tooltip="Base seconds between a request failing and the client retrying it. For fixed strategy, every attempt waits this long. For exponential, delay = base × 2^attempt. For exponential+jitter, a random factor (0.5–1×) is applied on top. 0 = 1 tick minimum.">?</button>
+            </div>
+
+            <div class="param-row">
+              <label for="param-retry_strategy" title="How retry delay scales with each successive attempt.">Retry Strategy</label>
+              <select id="param-retry_strategy" aria-label="Retry strategy" title="Fixed: same delay every attempt. Exponential: delay doubles per attempt (2s, 4s, 8s…). Exponential+Jitter: exponential with random variation to prevent thundering herd.">
+                <option value="fixed">Fixed</option>
+                <option value="exponential">Exponential Backoff</option>
+                <option value="exponential-jitter">Exponential + Jitter</option>
+              </select>
+              <span class="unit"></span>
+              <button class="tooltip-btn" data-tooltip="Fixed: every retry waits the same base delay. Exponential backoff: delay doubles with each attempt (base × 2^attempt), spreading retries over time. Exponential + Jitter: adds random variation (50–100% of exponential delay) to prevent synchronized retry waves (thundering herd).">?</button>
             </div>
           </fieldset>
         </div>

@@ -8,9 +8,11 @@ export interface SimulationParams {
 export interface ProducerConfig {
     traffic: TrafficConfig;
 }
+export type RetryStrategy = 'fixed' | 'exponential' | 'exponential-jitter';
 export interface ClientConfig {
     max_retries: number;
     retry_delay: number;
+    retry_strategy: RetryStrategy;
 }
 export interface BrokerConfig {
     enabled: boolean;

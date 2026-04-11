@@ -88,9 +88,14 @@ export class LocalConfigService {
     }
     validateClient(obj) {
         const d = DEFAULT_CONFIG.client;
+        const validStrategies = ['fixed', 'exponential', 'exponential-jitter'];
+        const strategy = typeof obj.retry_strategy === 'string' && validStrategies.includes(obj.retry_strategy)
+            ? obj.retry_strategy
+            : d.retry_strategy;
         return {
             max_retries: this.num(obj.max_retries, d.max_retries),
             retry_delay: this.num(obj.retry_delay, d.retry_delay),
+            retry_strategy: strategy,
         };
     }
     validateBroker(obj) {
@@ -181,6 +186,7 @@ export class LocalConfigService {
         lines.push('client:');
         lines.push(`  max_retries: ${config.client.max_retries}`);
         lines.push(`  retry_delay: ${config.client.retry_delay}`);
+        lines.push(`  retry_strategy: ${config.client.retry_strategy}`);
         lines.push('');
         lines.push('broker:');
         lines.push(`  enabled: ${config.broker.enabled}`);
