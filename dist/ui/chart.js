@@ -100,7 +100,7 @@ export class ChartRenderer {
             },
         };
     }
-    buildPlugins(withTooltipCallbacks = false) {
+    buildPlugins() {
         const tooltip = {
             backgroundColor: 'rgba(10, 14, 26, 0.95)',
             titleColor: '#00d4ff',
@@ -110,18 +110,23 @@ export class ChartRenderer {
             titleFont: { family: "'JetBrains Mono', monospace", size: 12 },
             bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
             padding: 12,
-        };
-        if (withTooltipCallbacks) {
-            tooltip.callbacks = {
+            callbacks: {
+                title: (items) => {
+                    if (!items.length)
+                        return '';
+                    return `Time: ${items[0].label}`;
+                },
                 label: (context) => {
                     const label = context.dataset.label || '';
                     const value = context.parsed.y;
                     if (label.includes('Pods'))
-                        return `${label}: ${value}`;
-                    return `${label}: ${Math.round(value).toLocaleString()}`;
+                        return ` ${label}: ${value}`;
+                    if (label.includes('Wait'))
+                        return ` ${label}: ${value >= 1000 ? (value / 1000).toFixed(1) + 's' : Math.round(value) + 'ms'}`;
+                    return ` ${label}: ${Math.round(value).toLocaleString()}`;
                 },
-            };
-        }
+            },
+        };
         return {
             legend: {
                 labels: {
@@ -298,7 +303,7 @@ export class ChartRenderer {
                 maintainAspectRatio: false,
                 animation: false,
                 interaction: { mode: 'index', intersect: false },
-                plugins: this.buildPlugins(true),
+                plugins: this.buildPlugins(),
                 scales: this.buildScales(),
             },
         });

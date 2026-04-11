@@ -129,7 +129,7 @@ export class ChartRenderer {
     };
   }
 
-  private buildPlugins(withTooltipCallbacks: boolean = false): Record<string, any> {
+  private buildPlugins(): Record<string, any> {
     const tooltip: any = {
       backgroundColor: 'rgba(10, 14, 26, 0.95)',
       titleColor: '#00d4ff',
@@ -139,18 +139,21 @@ export class ChartRenderer {
       titleFont: { family: "'JetBrains Mono', monospace", size: 12 },
       bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
       padding: 12,
-    };
-
-    if (withTooltipCallbacks) {
-      tooltip.callbacks = {
+      callbacks: {
+        title: (items: any[]) => {
+          if (!items.length) return '';
+          return `Time: ${items[0].label}`;
+        },
         label: (context: any) => {
           const label = context.dataset.label || '';
           const value = context.parsed.y;
-          if (label.includes('Pods')) return `${label}: ${value}`;
-          return `${label}: ${Math.round(value).toLocaleString()}`;
+          if (label.includes('Pods')) return ` ${label}: ${value}`;
+          if (label.includes('Wait'))
+            return ` ${label}: ${value >= 1000 ? (value / 1000).toFixed(1) + 's' : Math.round(value) + 'ms'}`;
+          return ` ${label}: ${Math.round(value).toLocaleString()}`;
         },
-      };
-    }
+      },
+    };
 
     return {
       legend: {
@@ -350,7 +353,7 @@ export class ChartRenderer {
         maintainAspectRatio: false,
         animation: false,
         interaction: { mode: 'index', intersect: false },
-        plugins: this.buildPlugins(true),
+        plugins: this.buildPlugins(),
         scales: this.buildScales(),
       },
     });
