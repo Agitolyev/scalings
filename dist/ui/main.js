@@ -176,10 +176,12 @@ class App {
                     // Auto-resize to fit formatted content
                     bodyTextarea.style.height = 'auto';
                     bodyTextarea.style.height = bodyTextarea.scrollHeight + 'px';
+                    if (showError)
+                        this.showSuccess('Formatted');
                 }
                 catch {
                     if (showError)
-                        this.showError('Body is not valid JSON');
+                        this.showError('Body is not valid JSON — check syntax');
                 }
             };
             bodyTextarea.addEventListener('blur', () => formatBody(false));
