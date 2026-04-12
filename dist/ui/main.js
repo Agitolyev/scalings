@@ -132,39 +132,45 @@ class App {
             updateBodyVisibility();
             methodSelect.addEventListener('change', updateBodyVisibility);
         }
-        // Auto-format JSON in body textarea on blur and paste
+        // Auto-format JSON in body textarea on blur, paste, and button click.
+        // Template variables ($randInt etc.) aren't valid JSON, so we swap them
+        // out for safe placeholders before parsing, then restore after formatting.
         const bodyTextarea = document.getElementById('loadtest-body');
         if (bodyTextarea) {
-            const formatBody = () => {
+            const templateVars = ['$randomEmail', '$randString', '$randFloat', '$timestamp', '$randInt', '$uuid'];
+            const formatBody = (showError) => {
                 const raw = bodyTextarea.value.trim();
                 if (!raw)
                     return;
+                // Replace template vars with JSON-safe placeholders
+                let safe = raw;
+                const placeholders = [];
+                for (const v of templateVars) {
+                    const ph = `"__SCALINGS_PH_${v.slice(1)}__"`;
+                    placeholders.push([ph, v]);
+                    safe = safe.split(v).join(ph);
+                }
                 try {
-                    const parsed = JSON.parse(raw);
-                    bodyTextarea.value = JSON.stringify(parsed, null, 2);
+                    const parsed = JSON.parse(safe);
+                    let formatted = JSON.stringify(parsed, null, 2);
+                    // Restore template vars from placeholders
+                    for (const [ph, v] of placeholders) {
+                        formatted = formatted.split(ph).join(v);
+                    }
+                    bodyTextarea.value = formatted;
                 }
                 catch {
-                    // Not valid JSON — leave as-is
+                    if (showError)
+                        this.showError('Body is not valid JSON');
                 }
             };
-            bodyTextarea.addEventListener('blur', formatBody);
+            bodyTextarea.addEventListener('blur', () => formatBody(false));
             bodyTextarea.addEventListener('paste', () => {
-                setTimeout(formatBody, 0);
+                setTimeout(() => formatBody(false), 0);
             });
             const formatBtn = document.getElementById('btn-format-body');
             if (formatBtn) {
-                formatBtn.addEventListener('click', () => {
-                    const raw = bodyTextarea.value.trim();
-                    if (!raw)
-                        return;
-                    try {
-                        const parsed = JSON.parse(raw);
-                        bodyTextarea.value = JSON.stringify(parsed, null, 2);
-                    }
-                    catch {
-                        this.showError('Body is not valid JSON');
-                    }
-                });
+                formatBtn.addEventListener('click', () => formatBody(true));
             }
         }
         // Generate load test script
