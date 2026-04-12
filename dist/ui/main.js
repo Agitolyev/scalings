@@ -173,6 +173,9 @@ class App {
                         formatted = formatted.split(ph).join(original);
                     }
                     bodyTextarea.value = formatted;
+                    // Auto-resize to fit formatted content
+                    bodyTextarea.style.height = 'auto';
+                    bodyTextarea.style.height = bodyTextarea.scrollHeight + 'px';
                 }
                 catch {
                     if (showError)
