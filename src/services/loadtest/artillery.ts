@@ -14,8 +14,8 @@ import {
   WaveParams,
   StepParams,
   CustomParams,
-  GrafanaParams,
 } from '../../interfaces/types.js';
+import { estimatePeakRps } from './utils.js';
 
 export class ArtilleryExporter implements LoadTestExporter {
   readonly id = 'artillery' as const;
@@ -58,7 +58,7 @@ export class ArtilleryExporter implements LoadTestExporter {
       const failThreshold = Math.max(1, Math.ceil(dropRate * 1.5));
       lines.push(`    thresholds:`);
       lines.push(`      - http.response_time.p95: ${Math.ceil(results.summary.peak_queue_wait_time_ms * 0.95 + avgResponseTime)}`);
-      lines.push(`      - http.request_rate: ${Math.floor(this.estimatePeakRps(config) * 0.5)}`);
+      lines.push(`      - http.request_rate: ${Math.floor(estimatePeakRps(config) * 0.5)}`);
 
       lines.push(`    conditions:`);
       lines.push(`      - expression: http.codes.200 / http.requests`);
@@ -194,7 +194,7 @@ export class ArtilleryExporter implements LoadTestExporter {
       warnings.push('Very short duration (< 10s) — Artillery may not produce meaningful results.');
     }
 
-    const peakRps = this.estimatePeakRps(config);
+    const peakRps = estimatePeakRps(config);
     if (peakRps > 100000) {
       warnings.push(`Peak RPS of ~${Math.round(peakRps).toLocaleString()} is very high for single-machine Artillery execution.`);
     }
@@ -357,19 +357,6 @@ export class ArtilleryExporter implements LoadTestExporter {
     return `{ ${parts.join(', ')} }`;
   }
 
-  private estimatePeakRps(config: SimulationConfig): number {
-    const p = config.producer.traffic.params;
-    switch (config.producer.traffic.pattern) {
-      case 'steady': return (p as SteadyParams).rps;
-      case 'gradual': return Math.max((p as GradualParams).start_rps, (p as GradualParams).end_rps);
-      case 'spike': return (p as SpikeParams).spike_rps;
-      case 'wave': return (p as WaveParams).base_rps + (p as WaveParams).amplitude;
-      case 'step': return Math.max(...(p as StepParams).steps.map(s => s.rps), 0);
-      case 'custom':
-      case 'grafana': return Math.max(...((p as CustomParams).series || []).map(s => s.rps), 0);
-      default: return 0;
-    }
-  }
 }
 
 interface Phase {

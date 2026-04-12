@@ -1,6 +1,7 @@
 // ============================================================================
 // scalings.xyz — Artillery Load Test Exporter
 // ============================================================================
+import { estimatePeakRps } from './utils.js';
 export class ArtilleryExporter {
     constructor() {
         this.id = 'artillery';
@@ -39,7 +40,7 @@ export class ArtilleryExporter {
             const failThreshold = Math.max(1, Math.ceil(dropRate * 1.5));
             lines.push(`    thresholds:`);
             lines.push(`      - http.response_time.p95: ${Math.ceil(results.summary.peak_queue_wait_time_ms * 0.95 + avgResponseTime)}`);
-            lines.push(`      - http.request_rate: ${Math.floor(this.estimatePeakRps(config) * 0.5)}`);
+            lines.push(`      - http.request_rate: ${Math.floor(estimatePeakRps(config) * 0.5)}`);
             lines.push(`    conditions:`);
             lines.push(`      - expression: http.codes.200 / http.requests`);
             lines.push(`        strict: false`);
@@ -169,7 +170,7 @@ export class ArtilleryExporter {
         if (duration < 10) {
             warnings.push('Very short duration (< 10s) — Artillery may not produce meaningful results.');
         }
-        const peakRps = this.estimatePeakRps(config);
+        const peakRps = estimatePeakRps(config);
         if (peakRps > 100000) {
             warnings.push(`Peak RPS of ~${Math.round(peakRps).toLocaleString()} is very high for single-machine Artillery execution.`);
         }
@@ -311,19 +312,6 @@ export class ArtilleryExporter {
             parts.push(`name: "${phase.name}"`);
         }
         return `{ ${parts.join(', ')} }`;
-    }
-    estimatePeakRps(config) {
-        const p = config.producer.traffic.params;
-        switch (config.producer.traffic.pattern) {
-            case 'steady': return p.rps;
-            case 'gradual': return Math.max(p.start_rps, p.end_rps);
-            case 'spike': return p.spike_rps;
-            case 'wave': return p.base_rps + p.amplitude;
-            case 'step': return Math.max(...p.steps.map(s => s.rps), 0);
-            case 'custom':
-            case 'grafana': return Math.max(...(p.series || []).map(s => s.rps), 0);
-            default: return 0;
-        }
     }
 }
 //# sourceMappingURL=artillery.js.map

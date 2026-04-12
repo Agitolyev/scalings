@@ -14,8 +14,8 @@ import {
   WaveParams,
   StepParams,
   CustomParams,
-  GrafanaParams,
 } from '../../interfaces/types.js';
+import { estimatePeakRps, rpsToVUs } from './utils.js';
 
 export class JMeterExporter implements LoadTestExporter {
   readonly id = 'jmeter' as const;
@@ -124,7 +124,7 @@ ${assertions}
       warnings.push('Very short duration (< 10s) — JMeter may not produce meaningful results.');
     }
 
-    const peakRps = this.estimatePeakRps(config);
+    const peakRps = estimatePeakRps(config);
     if (peakRps > 100000) {
       warnings.push(`Peak RPS of ~${Math.round(peakRps).toLocaleString()} will require many threads. Consider JMeter distributed testing.`);
     }
@@ -214,24 +214,20 @@ ${rows}
 ${headerXml}      </hashTree>`;
   }
 
-  private rpsToThreads(rps: number, avgResponseSec: number): number {
-    return Math.max(1, Math.ceil(rps * avgResponseSec));
-  }
-
   private steadyThreadGroup(params: SteadyParams, duration: number, avgResponseSec: number, request: LoadTestRequestConfig): string {
-    const threads = this.rpsToThreads(params.rps, avgResponseSec);
+    const threads = rpsToVUs(params.rps, avgResponseSec);
     return this.wrapThreadGroup('Steady Load', threads, Math.min(10, Math.floor(duration / 10)), duration, request);
   }
 
   private gradualThreadGroup(params: GradualParams, duration: number, avgResponseSec: number, request: LoadTestRequestConfig): string {
-    const endThreads = this.rpsToThreads(Math.max(params.start_rps, params.end_rps), avgResponseSec);
-    const startThreads = this.rpsToThreads(Math.min(params.start_rps, params.end_rps), avgResponseSec);
+    const endThreads = rpsToVUs(Math.max(params.start_rps, params.end_rps), avgResponseSec);
+    const startThreads = rpsToVUs(Math.min(params.start_rps, params.end_rps), avgResponseSec);
     return this.wrapThreadGroup('Gradual Ramp', endThreads, duration, duration, request);
   }
 
   private spikeThreadGroup(params: SpikeParams, duration: number, avgResponseSec: number, request: LoadTestRequestConfig): string {
-    const baseThreads = this.rpsToThreads(params.base_rps, avgResponseSec);
-    const spikeThreads = this.rpsToThreads(params.spike_rps, avgResponseSec);
+    const baseThreads = rpsToVUs(params.base_rps, avgResponseSec);
+    const spikeThreads = rpsToVUs(params.spike_rps, avgResponseSec);
     const spikeExtra = spikeThreads - baseThreads;
 
     return this.wrapUltimateThreadGroup('Spike Traffic', [
@@ -251,7 +247,7 @@ ${headerXml}      </hashTree>`;
     for (let i = 0; i < totalSteps; i++) {
       const angle = (2 * Math.PI * i) / stepsPerPeriod;
       const rps = Math.max(1, Math.round(params.base_rps + params.amplitude * Math.sin(angle)));
-      const threads = this.rpsToThreads(rps, avgResponseSec);
+      const threads = rpsToVUs(rps, avgResponseSec);
       schedule.push({
         threads,
         initDelay: i * stepDuration,
@@ -269,7 +265,7 @@ ${headerXml}      </hashTree>`;
     let offset = 0;
 
     for (const step of params.steps) {
-      const threads = this.rpsToThreads(step.rps, avgResponseSec);
+      const threads = rpsToVUs(step.rps, avgResponseSec);
       schedule.push({
         threads,
         initDelay: offset,
@@ -290,7 +286,7 @@ ${headerXml}      </hashTree>`;
     const schedule: { threads: number; initDelay: number; startupTime: number; holdTime: number; shutdownTime: number }[] = [];
 
     for (let i = 0; i < series.length; i++) {
-      const threads = this.rpsToThreads(series[i].rps, avgResponseSec);
+      const threads = rpsToVUs(series[i].rps, avgResponseSec);
       const startTime = Math.round(series[i].t);
       const endTime = i < series.length - 1 ? Math.round(series[i + 1].t) : duration;
       const holdTime = Math.max(1, endTime - startTime);
@@ -322,20 +318,6 @@ ${headerXml}      </hashTree>`;
     lines.push(`      <hashTree/>`);
 
     return lines.join('\n');
-  }
-
-  private estimatePeakRps(config: SimulationConfig): number {
-    const p = config.producer.traffic.params;
-    switch (config.producer.traffic.pattern) {
-      case 'steady': return (p as SteadyParams).rps;
-      case 'gradual': return Math.max((p as GradualParams).start_rps, (p as GradualParams).end_rps);
-      case 'spike': return (p as SpikeParams).spike_rps;
-      case 'wave': return (p as WaveParams).base_rps + (p as WaveParams).amplitude;
-      case 'step': return Math.max(...(p as StepParams).steps.map(s => s.rps), 0);
-      case 'custom':
-      case 'grafana': return Math.max(...((p as CustomParams).series || []).map(s => s.rps), 0);
-      default: return 0;
-    }
   }
 
   private replaceTemplateVars(str: string): string {

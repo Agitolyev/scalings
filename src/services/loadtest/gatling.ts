@@ -14,8 +14,8 @@ import {
   WaveParams,
   StepParams,
   CustomParams,
-  GrafanaParams,
 } from '../../interfaces/types.js';
+import { estimatePeakRps } from './utils.js';
 
 export class GatlingExporter implements LoadTestExporter {
   readonly id = 'gatling' as const;
@@ -114,7 +114,7 @@ export class GatlingExporter implements LoadTestExporter {
       warnings.push('Very short duration (< 10s) — Gatling may not produce meaningful results.');
     }
 
-    const peakRps = this.estimatePeakRps(config);
+    const peakRps = estimatePeakRps(config);
     if (peakRps > 100000) {
       warnings.push(`Peak RPS of ~${Math.round(peakRps).toLocaleString()} will require many concurrent users. Consider Gatling Enterprise for distributed execution.`);
     }
@@ -257,17 +257,4 @@ export class GatlingExporter implements LoadTestExporter {
     return assertions;
   }
 
-  private estimatePeakRps(config: SimulationConfig): number {
-    const p = config.producer.traffic.params;
-    switch (config.producer.traffic.pattern) {
-      case 'steady': return (p as SteadyParams).rps;
-      case 'gradual': return Math.max((p as GradualParams).start_rps, (p as GradualParams).end_rps);
-      case 'spike': return (p as SpikeParams).spike_rps;
-      case 'wave': return (p as WaveParams).base_rps + (p as WaveParams).amplitude;
-      case 'step': return Math.max(...(p as StepParams).steps.map(s => s.rps), 0);
-      case 'custom':
-      case 'grafana': return Math.max(...((p as CustomParams).series || []).map(s => s.rps), 0);
-      default: return 0;
-    }
-  }
 }

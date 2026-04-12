@@ -17,5 +17,4 @@ export declare class ArtilleryExporter implements LoadTestExporter {
     private stepPhases;
     private customPhases;
     private formatPhase;
-    private estimatePeakRps;
 }

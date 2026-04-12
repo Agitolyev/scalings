@@ -1,6 +1,7 @@
 // ============================================================================
 // scalings.xyz — JMeter Load Test Exporter
 // ============================================================================
+import { estimatePeakRps, rpsToVUs } from './utils.js';
 export class JMeterExporter {
     constructor() {
         this.id = 'jmeter';
@@ -104,7 +105,7 @@ ${assertions}
         if (duration < 10) {
             warnings.push('Very short duration (< 10s) — JMeter may not produce meaningful results.');
         }
-        const peakRps = this.estimatePeakRps(config);
+        const peakRps = estimatePeakRps(config);
         if (peakRps > 100000) {
             warnings.push(`Peak RPS of ~${Math.round(peakRps).toLocaleString()} will require many threads. Consider JMeter distributed testing.`);
         }
@@ -182,21 +183,18 @@ ${rows}
         <hashTree/>
 ${headerXml}      </hashTree>`;
     }
-    rpsToThreads(rps, avgResponseSec) {
-        return Math.max(1, Math.ceil(rps * avgResponseSec));
-    }
     steadyThreadGroup(params, duration, avgResponseSec, request) {
-        const threads = this.rpsToThreads(params.rps, avgResponseSec);
+        const threads = rpsToVUs(params.rps, avgResponseSec);
         return this.wrapThreadGroup('Steady Load', threads, Math.min(10, Math.floor(duration / 10)), duration, request);
     }
     gradualThreadGroup(params, duration, avgResponseSec, request) {
-        const endThreads = this.rpsToThreads(Math.max(params.start_rps, params.end_rps), avgResponseSec);
-        const startThreads = this.rpsToThreads(Math.min(params.start_rps, params.end_rps), avgResponseSec);
+        const endThreads = rpsToVUs(Math.max(params.start_rps, params.end_rps), avgResponseSec);
+        const startThreads = rpsToVUs(Math.min(params.start_rps, params.end_rps), avgResponseSec);
         return this.wrapThreadGroup('Gradual Ramp', endThreads, duration, duration, request);
     }
     spikeThreadGroup(params, duration, avgResponseSec, request) {
-        const baseThreads = this.rpsToThreads(params.base_rps, avgResponseSec);
-        const spikeThreads = this.rpsToThreads(params.spike_rps, avgResponseSec);
+        const baseThreads = rpsToVUs(params.base_rps, avgResponseSec);
+        const spikeThreads = rpsToVUs(params.spike_rps, avgResponseSec);
         const spikeExtra = spikeThreads - baseThreads;
         return this.wrapUltimateThreadGroup('Spike Traffic', [
             { threads: baseThreads, initDelay: 0, startupTime: 5, holdTime: duration - 5, shutdownTime: 0 },
@@ -213,7 +211,7 @@ ${headerXml}      </hashTree>`;
         for (let i = 0; i < totalSteps; i++) {
             const angle = (2 * Math.PI * i) / stepsPerPeriod;
             const rps = Math.max(1, Math.round(params.base_rps + params.amplitude * Math.sin(angle)));
-            const threads = this.rpsToThreads(rps, avgResponseSec);
+            const threads = rpsToVUs(rps, avgResponseSec);
             schedule.push({
                 threads,
                 initDelay: i * stepDuration,
@@ -228,7 +226,7 @@ ${headerXml}      </hashTree>`;
         const schedule = [];
         let offset = 0;
         for (const step of params.steps) {
-            const threads = this.rpsToThreads(step.rps, avgResponseSec);
+            const threads = rpsToVUs(step.rps, avgResponseSec);
             schedule.push({
                 threads,
                 initDelay: offset,
@@ -246,7 +244,7 @@ ${headerXml}      </hashTree>`;
             return this.steadyThreadGroup({ rps: 100 }, duration, avgResponseSec, request);
         const schedule = [];
         for (let i = 0; i < series.length; i++) {
-            const threads = this.rpsToThreads(series[i].rps, avgResponseSec);
+            const threads = rpsToVUs(series[i].rps, avgResponseSec);
             const startTime = Math.round(series[i].t);
             const endTime = i < series.length - 1 ? Math.round(series[i + 1].t) : duration;
             const holdTime = Math.max(1, endTime - startTime);
@@ -274,19 +272,6 @@ ${headerXml}      </hashTree>`;
         lines.push(`      </ResponseAssertion>`);
         lines.push(`      <hashTree/>`);
         return lines.join('\n');
-    }
-    estimatePeakRps(config) {
-        const p = config.producer.traffic.params;
-        switch (config.producer.traffic.pattern) {
-            case 'steady': return p.rps;
-            case 'gradual': return Math.max(p.start_rps, p.end_rps);
-            case 'spike': return p.spike_rps;
-            case 'wave': return p.base_rps + p.amplitude;
-            case 'step': return Math.max(...p.steps.map(s => s.rps), 0);
-            case 'custom':
-            case 'grafana': return Math.max(...(p.series || []).map(s => s.rps), 0);
-            default: return 0;
-        }
     }
     replaceTemplateVars(str) {
         return str

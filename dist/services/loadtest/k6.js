@@ -1,6 +1,7 @@
 // ============================================================================
 // scalings.xyz — k6 Load Test Exporter
 // ============================================================================
+import { estimatePeakRps, rpsToVUs } from './utils.js';
 /** Map scalings template vars → k6 JS expressions */
 const K6_VAR_MAP = {
     '$randInt': '${Math.floor(Math.random() * 10000)}',
@@ -43,7 +44,7 @@ export class K6Exporter {
             || (hasHeaders && Object.values(request.headers).some(v => v.includes('$uuid')));
         const lines = [];
         lines.push(`import http from 'k6/http';`);
-        lines.push(`import { check, sleep } from 'k6';`);
+        lines.push(`import { check } from 'k6';`);
         if (needsRandomString) {
             lines.push(`import { randomString } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';`);
         }
@@ -55,7 +56,8 @@ export class K6Exporter {
         lines.push(`// Source config: ${config.name}`);
         lines.push(`// Simulation URL: ${shareUrl}`);
         lines.push(`//`);
-        lines.push(`// Tunable: adjust AVG_RESPONSE_TIME to match your service's baseline`);
+        lines.push(`// Tunable: AVG_RESPONSE_TIME is used to size VU pools (preAllocatedVUs / maxVUs).`);
+        lines.push(`// Adjust to match your service's baseline response time.`);
         lines.push(`const AVG_RESPONSE_TIME = ${avgResponseSec}; // seconds`);
         lines.push(`const TARGET_URL = '${targetUrl}';`);
         lines.push(``);
@@ -126,7 +128,8 @@ export class K6Exporter {
         lines.push(`  check(res, {`);
         lines.push(`    'status is 200': (r) => r.status === 200,`);
         lines.push(`  });`);
-        lines.push(`  sleep(AVG_RESPONSE_TIME);`);
+        lines.push(`  // No sleep needed — arrival-rate executors control request rate independently.`);
+        lines.push(`  // Adding sleep here would waste VU time and require more VUs to hit target RPS.`);
         lines.push(`}`);
         lines.push(``);
         lines.push(`export function handleSummary(data) {`);
@@ -143,7 +146,7 @@ export class K6Exporter {
         if (duration < 10) {
             warnings.push('Very short duration (< 10s) — k6 may not produce meaningful results.');
         }
-        const peakRps = this.estimatePeakRps(config);
+        const peakRps = estimatePeakRps(config);
         if (peakRps > 100000) {
             warnings.push(`Peak RPS of ~${Math.round(peakRps).toLocaleString()} will require many VUs. Consider distributed execution.`);
         }
@@ -158,23 +161,23 @@ export class K6Exporter {
     buildScenarios(pattern, params, duration, avgResponseSec) {
         switch (pattern) {
             case 'steady':
-                return this.steadyScenarios(params, duration);
+                return this.steadyScenarios(params, duration, avgResponseSec);
             case 'gradual':
-                return this.gradualScenarios(params, duration);
+                return this.gradualScenarios(params, duration, avgResponseSec);
             case 'spike':
-                return this.spikeScenarios(params, duration);
+                return this.spikeScenarios(params, duration, avgResponseSec);
             case 'wave':
-                return this.waveScenarios(params, duration);
+                return this.waveScenarios(params, duration, avgResponseSec);
             case 'step':
-                return this.stepScenarios(params);
+                return this.stepScenarios(params, avgResponseSec);
             case 'custom':
             case 'grafana':
-                return this.customScenarios(params, duration);
+                return this.customScenarios(params, duration, avgResponseSec);
             default:
-                return this.steadyScenarios({ rps: 100 }, duration);
+                return this.steadyScenarios({ rps: 100 }, duration, avgResponseSec);
         }
     }
-    steadyScenarios(params, duration) {
+    steadyScenarios(params, duration, avgResponseSec) {
         return [{
                 name: 'steady_load',
                 config: {
@@ -182,27 +185,28 @@ export class K6Exporter {
                     rate: params.rps,
                     timeUnit: '1s',
                     duration: `${duration}s`,
-                    preAllocatedVUs: Math.max(1, Math.ceil(params.rps * 0.1)),
-                    maxVUs: Math.max(10, Math.ceil(params.rps * 0.5)),
+                    preAllocatedVUs: rpsToVUs(params.rps, avgResponseSec),
+                    maxVUs: Math.max(10, Math.ceil(rpsToVUs(params.rps, avgResponseSec) * 1.5)),
                 },
             }];
     }
-    gradualScenarios(params, duration) {
+    gradualScenarios(params, duration, avgResponseSec) {
+        const peakRps = Math.max(params.start_rps, params.end_rps);
         return [{
                 name: 'gradual_ramp',
                 config: {
                     executor: 'ramping-arrival-rate',
                     startRate: params.start_rps,
                     timeUnit: '1s',
-                    preAllocatedVUs: Math.max(1, Math.ceil(params.start_rps * 0.1)),
-                    maxVUs: Math.max(10, Math.ceil(params.end_rps * 0.5)),
+                    preAllocatedVUs: rpsToVUs(params.start_rps, avgResponseSec),
+                    maxVUs: Math.max(10, Math.ceil(rpsToVUs(peakRps, avgResponseSec) * 1.5)),
                     stages: [
                         { duration: `${duration}s`, target: params.end_rps },
                     ],
                 },
             }];
     }
-    spikeScenarios(params, duration) {
+    spikeScenarios(params, duration, avgResponseSec) {
         const stages = [];
         const spikeEnd = params.spike_start + params.spike_duration;
         if (params.spike_start > 0) {
@@ -225,13 +229,13 @@ export class K6Exporter {
                     executor: 'ramping-arrival-rate',
                     startRate: params.base_rps,
                     timeUnit: '1s',
-                    preAllocatedVUs: Math.max(1, Math.ceil(params.base_rps * 0.1)),
-                    maxVUs: Math.max(10, Math.ceil(params.spike_rps * 0.5)),
+                    preAllocatedVUs: rpsToVUs(params.base_rps, avgResponseSec),
+                    maxVUs: Math.max(10, Math.ceil(rpsToVUs(params.spike_rps, avgResponseSec) * 1.5)),
                     stages,
                 },
             }];
     }
-    waveScenarios(params, duration) {
+    waveScenarios(params, duration, avgResponseSec) {
         const stepsPerPeriod = 12;
         const periods = Math.max(1, Math.floor(duration / params.period));
         const totalSteps = periods * stepsPerPeriod;
@@ -249,17 +253,18 @@ export class K6Exporter {
                     executor: 'ramping-arrival-rate',
                     startRate: params.base_rps,
                     timeUnit: '1s',
-                    preAllocatedVUs: Math.max(1, Math.ceil(params.base_rps * 0.1)),
-                    maxVUs: Math.max(10, Math.ceil(peakRps * 0.5)),
+                    preAllocatedVUs: rpsToVUs(params.base_rps, avgResponseSec),
+                    maxVUs: Math.max(10, Math.ceil(rpsToVUs(peakRps, avgResponseSec) * 1.5)),
                     stages,
                 },
             }];
     }
-    stepScenarios(params) {
+    stepScenarios(params, avgResponseSec) {
         const scenarios = [];
         let startTime = 0;
         for (let i = 0; i < params.steps.length; i++) {
             const step = params.steps[i];
+            const vus = rpsToVUs(step.rps, avgResponseSec);
             scenarios.push({
                 name: `step_${i + 1}`,
                 config: {
@@ -267,8 +272,8 @@ export class K6Exporter {
                     rate: step.rps,
                     timeUnit: '1s',
                     duration: `${step.duration}s`,
-                    preAllocatedVUs: Math.max(1, Math.ceil(step.rps * 0.1)),
-                    maxVUs: Math.max(10, Math.ceil(step.rps * 0.5)),
+                    preAllocatedVUs: vus,
+                    maxVUs: Math.max(10, Math.ceil(vus * 1.5)),
                     startTime: `${startTime}s`,
                 },
             });
@@ -276,13 +281,13 @@ export class K6Exporter {
         }
         return scenarios;
     }
-    customScenarios(params, duration) {
+    customScenarios(params, duration, avgResponseSec) {
         const series = params.series;
         if (!series || series.length === 0) {
-            return this.steadyScenarios({ rps: 100 }, duration);
+            return this.steadyScenarios({ rps: 100 }, duration, avgResponseSec);
         }
         if (series.length === 1) {
-            return this.steadyScenarios({ rps: series[0].rps }, duration);
+            return this.steadyScenarios({ rps: series[0].rps }, duration, avgResponseSec);
         }
         const stages = [];
         for (let i = 1; i < series.length; i++) {
@@ -300,8 +305,8 @@ export class K6Exporter {
                     executor: 'ramping-arrival-rate',
                     startRate: Math.max(1, Math.round(series[0].rps)),
                     timeUnit: '1s',
-                    preAllocatedVUs: Math.max(1, Math.ceil(series[0].rps * 0.1)),
-                    maxVUs: Math.max(10, Math.ceil(peakRps * 0.5)),
+                    preAllocatedVUs: rpsToVUs(series[0].rps, avgResponseSec),
+                    maxVUs: Math.max(10, Math.ceil(rpsToVUs(peakRps, avgResponseSec) * 1.5)),
                     stages,
                 },
             }];
@@ -324,19 +329,6 @@ export class K6Exporter {
             });
         }
         return thresholds;
-    }
-    estimatePeakRps(config) {
-        const p = config.producer.traffic.params;
-        switch (config.producer.traffic.pattern) {
-            case 'steady': return p.rps;
-            case 'gradual': return Math.max(p.start_rps, p.end_rps);
-            case 'spike': return p.spike_rps;
-            case 'wave': return p.base_rps + p.amplitude;
-            case 'step': return Math.max(...p.steps.map(s => s.rps), 0);
-            case 'custom':
-            case 'grafana': return Math.max(...(p.series || []).map(s => s.rps), 0);
-            default: return 0;
-        }
     }
     formatValue(value) {
         if (typeof value === 'string')

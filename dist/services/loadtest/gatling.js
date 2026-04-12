@@ -1,6 +1,7 @@
 // ============================================================================
 // scalings.xyz — Gatling Load Test Exporter
 // ============================================================================
+import { estimatePeakRps } from './utils.js';
 export class GatlingExporter {
     constructor() {
         this.id = 'gatling';
@@ -87,7 +88,7 @@ export class GatlingExporter {
         if (duration < 10) {
             warnings.push('Very short duration (< 10s) — Gatling may not produce meaningful results.');
         }
-        const peakRps = this.estimatePeakRps(config);
+        const peakRps = estimatePeakRps(config);
         if (peakRps > 100000) {
             warnings.push(`Peak RPS of ~${Math.round(peakRps).toLocaleString()} will require many concurrent users. Consider Gatling Enterprise for distributed execution.`);
         }
@@ -208,19 +209,6 @@ export class GatlingExporter {
             assertions.push(`global().responseTime().percentile3().lt(${p95Ms})`);
         }
         return assertions;
-    }
-    estimatePeakRps(config) {
-        const p = config.producer.traffic.params;
-        switch (config.producer.traffic.pattern) {
-            case 'steady': return p.rps;
-            case 'gradual': return Math.max(p.start_rps, p.end_rps);
-            case 'spike': return p.spike_rps;
-            case 'wave': return p.base_rps + p.amplitude;
-            case 'step': return Math.max(...p.steps.map(s => s.rps), 0);
-            case 'custom':
-            case 'grafana': return Math.max(...(p.series || []).map(s => s.rps), 0);
-            default: return 0;
-        }
     }
 }
 //# sourceMappingURL=gatling.js.map

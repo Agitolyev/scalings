@@ -116,3 +116,21 @@ Chart datasets use descriptive labels (`Traffic (RPS)`, `Capacity (RPS)`,
 1. Source Config Export: Save/share simulation setup as YAML
 2. Target Config Export: Generate deployable manifests (K8s HPA YAML, AWS CloudFormation, GCP Terraform)
 3. Run Export: Save multi-run comparison data as JSON for sharing or later analysis
+4. Load Test Export: Generate ready-to-run load test scripts that reproduce the simulated
+   traffic pattern against a real endpoint. Supported frameworks:
+   - **k6** (Grafana) — JavaScript. Uses `constant-arrival-rate` / `ramping-arrival-rate` executors.
+     VU pools sized from avg response time. Output: `.js` file.
+   - **Gatling** — Java simulation class with `constantUsersPerSec` / `rampUsersPerSec` injection profiles.
+     Output: `.java` file.
+   - **Locust** — Python `HttpUser` with optional `LoadTestShape` for non-steady patterns.
+     Output: `.py` file.
+   - **JMeter** — JMX format. Standard ThreadGroup for steady, Ultimate Thread Group plugin for
+     dynamic patterns (spike, wave, step, custom). Output: `.jmx` file.
+   - **Artillery** — Node.js YAML config with `arrivalRate` / `rampTo` phases.
+     Output: `.yml` file.
+
+   All generated scripts include a comment with the scalings.xyz share URL so recipients can
+   trace back to the original simulation. Configure target URL, HTTP method, headers, request
+   body, and average response time before generating. Template variables (`$randInt`,
+   `$randString`, `$uuid`, `$timestamp`, `$randFloat`, `$randomEmail`) are translated to
+   each framework's native random-data idioms.
