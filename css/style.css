@@ -1279,18 +1279,6 @@ button:active, .btn:active {
   padding: 0;
 }
 
-.loadtest-external-link {
-  text-decoration: none;
-  color: var(--cyan);
-  font-size: 0.75rem;
-  display: inline-flex;
-  align-items: center;
-}
-
-.loadtest-external-link:hover {
-  color: var(--lime);
-}
-
 /* --- Load Test Export Section --- */
 .loadtest-export-section {
   margin-top: 1.5rem;

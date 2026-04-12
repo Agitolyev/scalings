@@ -830,11 +830,6 @@ class App {
         }
         if (label)
             label.textContent = `${exporter.name} script`;
-        // Show "k6 Cloud" link only for k6 framework
-        const k6Link = document.getElementById('loadtest-k6-cloud-link');
-        if (k6Link) {
-            k6Link.classList.toggle('hidden', this.selectedFramework !== 'k6');
-        }
     }
     downloadLoadTestScript() {
         const code = document.getElementById('loadtest-code');
