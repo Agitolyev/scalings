@@ -132,6 +132,27 @@ class App {
             updateBodyVisibility();
             methodSelect.addEventListener('change', updateBodyVisibility);
         }
+        // Auto-format JSON in body textarea on blur and paste
+        const bodyTextarea = document.getElementById('loadtest-body');
+        if (bodyTextarea) {
+            const formatBody = () => {
+                const raw = bodyTextarea.value.trim();
+                if (!raw)
+                    return;
+                try {
+                    const parsed = JSON.parse(raw);
+                    bodyTextarea.value = JSON.stringify(parsed, null, 2);
+                }
+                catch {
+                    // Not valid JSON — leave as-is
+                }
+            };
+            bodyTextarea.addEventListener('blur', formatBody);
+            bodyTextarea.addEventListener('paste', () => {
+                // Run after paste content is applied
+                setTimeout(formatBody, 0);
+            });
+        }
         // Generate load test script
         const genLoadTestBtn = document.getElementById('btn-generate-loadtest');
         if (genLoadTestBtn) {
