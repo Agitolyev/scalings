@@ -660,7 +660,10 @@
 
         <div class="loadtest-options" id="loadtest-body-section">
           <div class="loadtest-option">
-            <label for="loadtest-body" title="Request body (for POST/PUT/PATCH). Use template variables for dynamic data.">Body <span class="loadtest-hint">(<code>$randInt</code> <code>$randString</code> <code>$uuid</code> <code>$timestamp</code> <code>$randFloat</code> <code>$randomEmail</code>)</span></label>
+            <div class="loadtest-body-label-row">
+              <label for="loadtest-body" title="Request body (for POST/PUT/PATCH). Use template variables for dynamic data.">Body <span class="loadtest-hint">(<code>$randInt</code> <code>$randString</code> <code>$uuid</code> <code>$timestamp</code> <code>$randFloat</code> <code>$randomEmail</code>)</span></label>
+              <button id="btn-format-body" class="btn btn-small loadtest-format-btn" title="Format JSON body">Format JSON</button>
+            </div>
             <textarea id="loadtest-body" rows="4" placeholder='{"name": "$randString", "id": $randInt, "email": "$randomEmail"}' title="Request body — use template variables like $randInt, $randString, $uuid for dynamic data per request"></textarea>
           </div>
         </div>

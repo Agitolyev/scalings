@@ -1392,6 +1392,29 @@ button:active, .btn:active {
   font-size: 0.7rem;
 }
 
+.loadtest-body-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+
+.loadtest-body-label-row label {
+  margin-bottom: 0;
+}
+
+.loadtest-format-btn {
+  font-size: 0.68rem;
+  padding: 0.15rem 0.5rem;
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+}
+
+.loadtest-format-btn:hover {
+  color: var(--cyan);
+  border-color: var(--cyan-dim);
+}
+
 .loadtest-hint code {
   font-family: var(--font-mono);
   font-size: 0.68rem;

@@ -149,9 +149,23 @@ class App {
             };
             bodyTextarea.addEventListener('blur', formatBody);
             bodyTextarea.addEventListener('paste', () => {
-                // Run after paste content is applied
                 setTimeout(formatBody, 0);
             });
+            const formatBtn = document.getElementById('btn-format-body');
+            if (formatBtn) {
+                formatBtn.addEventListener('click', () => {
+                    const raw = bodyTextarea.value.trim();
+                    if (!raw)
+                        return;
+                    try {
+                        const parsed = JSON.parse(raw);
+                        bodyTextarea.value = JSON.stringify(parsed, null, 2);
+                    }
+                    catch {
+                        this.showError('Body is not valid JSON');
+                    }
+                });
+            }
         }
         // Generate load test script
         const genLoadTestBtn = document.getElementById('btn-generate-loadtest');
