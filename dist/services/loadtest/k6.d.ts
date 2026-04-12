@@ -13,7 +13,6 @@ export declare class K6Exporter implements LoadTestExporter {
     private stepScenarios;
     private customScenarios;
     private buildThresholds;
-    private estimatePeakRps;
     private formatValue;
     private escapeJsString;
 }

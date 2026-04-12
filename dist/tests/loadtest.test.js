@@ -84,7 +84,7 @@ describe('k6 Exporter', () => {
         });
         const output = exporter.generate(config, 'https://example.com', 100, DEFAULT_LOAD_TEST_REQUEST);
         assert.ok(output.includes("import http from 'k6/http'"));
-        assert.ok(output.includes("import { check, sleep } from 'k6'"));
+        assert.ok(output.includes("import { check } from 'k6'"));
         assert.ok(output.includes('constant-arrival-rate'));
         assert.ok(output.includes('rate: 500'));
         assert.ok(output.includes("TARGET_URL = 'https://example.com'"));

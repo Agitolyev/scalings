@@ -11,6 +11,4 @@ export declare class LocustExporter implements LoadTestExporter {
     private waveShape;
     private stepShape;
     private customShape;
-    private rpsToUsers;
-    private estimatePeakRps;
 }

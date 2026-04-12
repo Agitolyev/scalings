@@ -1,6 +1,7 @@
 // ============================================================================
 // scalings.xyz — Locust Load Test Exporter
 // ============================================================================
+import { estimatePeakRps, rpsToVUs } from './utils.js';
 /** Map scalings template vars → Python expressions for Locust */
 const LOCUST_VAR_MAP = {
     '$randInt': '{random.randint(0, 10000)}',
@@ -77,7 +78,7 @@ export class LocustExporter {
             lines.push(`# Run: locust -f scalings_loadtest.py --host ${targetUrl} --headless`);
         }
         else {
-            const userCount = this.rpsToUsers(this.estimatePeakRps(config), avgResponseSec);
+            const userCount = rpsToVUs(estimatePeakRps(config), avgResponseSec);
             lines.push(`# Run: locust -f scalings_loadtest.py --host ${targetUrl} --headless -u ${userCount} -r ${Math.max(1, Math.ceil(userCount / 10))} -t ${duration}s`);
         }
         lines.push(`#`);
@@ -167,7 +168,7 @@ export class LocustExporter {
         if (duration < 10) {
             warnings.push('Very short duration (< 10s) — Locust may not produce meaningful results.');
         }
-        const peakRps = this.estimatePeakRps(config);
+        const peakRps = estimatePeakRps(config);
         if (peakRps > 100000) {
             warnings.push(`Peak RPS of ~${Math.round(peakRps).toLocaleString()} will require many users. Consider distributed execution with multiple workers.`);
         }
@@ -185,8 +186,8 @@ export class LocustExporter {
         }
     }
     gradualShape(params, duration, avgResponseSec) {
-        const startUsers = this.rpsToUsers(params.start_rps, avgResponseSec);
-        const endUsers = this.rpsToUsers(params.end_rps, avgResponseSec);
+        const startUsers = rpsToVUs(params.start_rps, avgResponseSec);
+        const endUsers = rpsToVUs(params.end_rps, avgResponseSec);
         const spawnRate = Math.max(1, Math.ceil(Math.abs(endUsers - startUsers) / duration * 10));
         return [
             `class ScalingsLoadShape(LoadTestShape):`,
@@ -208,8 +209,8 @@ export class LocustExporter {
         ];
     }
     spikeShape(params, duration, avgResponseSec) {
-        const baseUsers = this.rpsToUsers(params.base_rps, avgResponseSec);
-        const spikeUsers = this.rpsToUsers(params.spike_rps, avgResponseSec);
+        const baseUsers = rpsToVUs(params.base_rps, avgResponseSec);
+        const spikeUsers = rpsToVUs(params.spike_rps, avgResponseSec);
         const spawnRate = Math.max(1, Math.ceil(spikeUsers / 10));
         return [
             `class ScalingsLoadShape(LoadTestShape):`,
@@ -232,8 +233,8 @@ export class LocustExporter {
         ];
     }
     waveShape(params, duration, avgResponseSec) {
-        const baseUsers = this.rpsToUsers(params.base_rps, avgResponseSec);
-        const ampUsers = this.rpsToUsers(params.amplitude, avgResponseSec);
+        const baseUsers = rpsToVUs(params.base_rps, avgResponseSec);
+        const ampUsers = rpsToVUs(params.amplitude, avgResponseSec);
         const spawnRate = Math.max(1, Math.ceil((baseUsers + ampUsers) / 10));
         return [
             `class ScalingsLoadShape(LoadTestShape):`,
@@ -258,7 +259,7 @@ export class LocustExporter {
     stepShape(params, avgResponseSec) {
         const totalDuration = params.steps.reduce((sum, s) => sum + s.duration, 0);
         const steps = params.steps.map(s => ({
-            users: this.rpsToUsers(s.rps, avgResponseSec),
+            users: rpsToVUs(s.rps, avgResponseSec),
             duration: s.duration,
         }));
         const maxUsers = Math.max(...steps.map(s => s.users));
@@ -284,8 +285,8 @@ export class LocustExporter {
         const series = params.series;
         if (!series || series.length < 2)
             return [];
-        const points = series.map(s => `(${Math.round(s.t)}, ${this.rpsToUsers(s.rps, avgResponseSec)})`).join(', ');
-        const maxUsers = Math.max(...series.map(s => this.rpsToUsers(s.rps, avgResponseSec)));
+        const points = series.map(s => `(${Math.round(s.t)}, ${rpsToVUs(s.rps, avgResponseSec)})`).join(', ');
+        const maxUsers = Math.max(...series.map(s => rpsToVUs(s.rps, avgResponseSec)));
         const spawnRate = Math.max(1, Math.ceil(maxUsers / 10));
         return [
             `class ScalingsLoadShape(LoadTestShape):`,
@@ -311,22 +312,6 @@ export class LocustExporter {
             `        # Hold last value`,
             `        return max(1, self.points[-1][1]), max(1, ${spawnRate}), [ScalingsUser]`,
         ];
-    }
-    rpsToUsers(rps, avgResponseSec) {
-        return Math.max(1, Math.ceil(rps * avgResponseSec));
-    }
-    estimatePeakRps(config) {
-        const p = config.producer.traffic.params;
-        switch (config.producer.traffic.pattern) {
-            case 'steady': return p.rps;
-            case 'gradual': return Math.max(p.start_rps, p.end_rps);
-            case 'spike': return p.spike_rps;
-            case 'wave': return p.base_rps + p.amplitude;
-            case 'step': return Math.max(...p.steps.map(s => s.rps), 0);
-            case 'custom':
-            case 'grafana': return Math.max(...(p.series || []).map(s => s.rps), 0);
-            default: return 0;
-        }
     }
 }
 //# sourceMappingURL=locust.js.map

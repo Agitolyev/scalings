@@ -8,7 +8,6 @@ export declare class JMeterExporter implements LoadTestExporter {
     private buildThreadGroups;
     private wrapThreadGroup;
     private wrapUltimateThreadGroup;
-    private rpsToThreads;
     private steadyThreadGroup;
     private gradualThreadGroup;
     private spikeThreadGroup;
@@ -16,7 +15,6 @@ export declare class JMeterExporter implements LoadTestExporter {
     private stepThreadGroup;
     private customThreadGroup;
     private buildAssertions;
-    private estimatePeakRps;
     private replaceTemplateVars;
     private buildHeaderManager;
     private escapeXml;

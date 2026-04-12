@@ -15,5 +15,4 @@ export declare class GatlingExporter implements LoadTestExporter {
     private stepInjection;
     private customInjection;
     private buildAssertions;
-    private estimatePeakRps;
 }

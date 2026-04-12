@@ -16,6 +16,7 @@ import {
   CustomParams,
   GrafanaParams,
 } from '../../interfaces/types.js';
+import { estimatePeakRps, rpsToVUs } from './utils.js';
 
 /** Map scalings template vars → k6 JS expressions */
 const K6_VAR_MAP: Record<string, string> = {
@@ -63,7 +64,7 @@ export class K6Exporter implements LoadTestExporter {
 
     const lines: string[] = [];
     lines.push(`import http from 'k6/http';`);
-    lines.push(`import { check, sleep } from 'k6';`);
+    lines.push(`import { check } from 'k6';`);
     if (needsRandomString) {
       lines.push(`import { randomString } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';`);
     }
@@ -75,7 +76,8 @@ export class K6Exporter implements LoadTestExporter {
     lines.push(`// Source config: ${config.name}`);
     lines.push(`// Simulation URL: ${shareUrl}`);
     lines.push(`//`);
-    lines.push(`// Tunable: adjust AVG_RESPONSE_TIME to match your service's baseline`);
+    lines.push(`// Tunable: AVG_RESPONSE_TIME is used to size VU pools (preAllocatedVUs / maxVUs).`);
+    lines.push(`// Adjust to match your service's baseline response time.`);
     lines.push(`const AVG_RESPONSE_TIME = ${avgResponseSec}; // seconds`);
     lines.push(`const TARGET_URL = '${targetUrl}';`);
     lines.push(``);
@@ -148,7 +150,8 @@ export class K6Exporter implements LoadTestExporter {
     lines.push(`  check(res, {`);
     lines.push(`    'status is 200': (r) => r.status === 200,`);
     lines.push(`  });`);
-    lines.push(`  sleep(AVG_RESPONSE_TIME);`);
+    lines.push(`  // No sleep needed — arrival-rate executors control request rate independently.`);
+    lines.push(`  // Adding sleep here would waste VU time and require more VUs to hit target RPS.`);
     lines.push(`}`);
     lines.push(``);
     lines.push(`export function handleSummary(data) {`);
@@ -169,7 +172,7 @@ export class K6Exporter implements LoadTestExporter {
       warnings.push('Very short duration (< 10s) — k6 may not produce meaningful results.');
     }
 
-    const peakRps = this.estimatePeakRps(config);
+    const peakRps = estimatePeakRps(config);
     if (peakRps > 100000) {
       warnings.push(`Peak RPS of ~${Math.round(peakRps).toLocaleString()} will require many VUs. Consider distributed execution.`);
     }
@@ -192,24 +195,24 @@ export class K6Exporter implements LoadTestExporter {
   ): { name: string; config: Record<string, unknown> }[] {
     switch (pattern) {
       case 'steady':
-        return this.steadyScenarios(params as SteadyParams, duration);
+        return this.steadyScenarios(params as SteadyParams, duration, avgResponseSec);
       case 'gradual':
-        return this.gradualScenarios(params as GradualParams, duration);
+        return this.gradualScenarios(params as GradualParams, duration, avgResponseSec);
       case 'spike':
-        return this.spikeScenarios(params as SpikeParams, duration);
+        return this.spikeScenarios(params as SpikeParams, duration, avgResponseSec);
       case 'wave':
-        return this.waveScenarios(params as WaveParams, duration);
+        return this.waveScenarios(params as WaveParams, duration, avgResponseSec);
       case 'step':
-        return this.stepScenarios(params as StepParams);
+        return this.stepScenarios(params as StepParams, avgResponseSec);
       case 'custom':
       case 'grafana':
-        return this.customScenarios(params as CustomParams, duration);
+        return this.customScenarios(params as CustomParams, duration, avgResponseSec);
       default:
-        return this.steadyScenarios({ rps: 100 }, duration);
+        return this.steadyScenarios({ rps: 100 }, duration, avgResponseSec);
     }
   }
 
-  private steadyScenarios(params: SteadyParams, duration: number) {
+  private steadyScenarios(params: SteadyParams, duration: number, avgResponseSec: number) {
     return [{
       name: 'steady_load',
       config: {
@@ -217,21 +220,22 @@ export class K6Exporter implements LoadTestExporter {
         rate: params.rps,
         timeUnit: '1s',
         duration: `${duration}s`,
-        preAllocatedVUs: Math.max(1, Math.ceil(params.rps * 0.1)),
-        maxVUs: Math.max(10, Math.ceil(params.rps * 0.5)),
+        preAllocatedVUs: rpsToVUs(params.rps, avgResponseSec),
+        maxVUs: Math.max(10, Math.ceil(rpsToVUs(params.rps, avgResponseSec) * 1.5)),
       },
     }];
   }
 
-  private gradualScenarios(params: GradualParams, duration: number) {
+  private gradualScenarios(params: GradualParams, duration: number, avgResponseSec: number) {
+    const peakRps = Math.max(params.start_rps, params.end_rps);
     return [{
       name: 'gradual_ramp',
       config: {
         executor: 'ramping-arrival-rate',
         startRate: params.start_rps,
         timeUnit: '1s',
-        preAllocatedVUs: Math.max(1, Math.ceil(params.start_rps * 0.1)),
-        maxVUs: Math.max(10, Math.ceil(params.end_rps * 0.5)),
+        preAllocatedVUs: rpsToVUs(params.start_rps, avgResponseSec),
+        maxVUs: Math.max(10, Math.ceil(rpsToVUs(peakRps, avgResponseSec) * 1.5)),
         stages: [
           { duration: `${duration}s`, target: params.end_rps },
         ],
@@ -239,7 +243,7 @@ export class K6Exporter implements LoadTestExporter {
     }];
   }
 
-  private spikeScenarios(params: SpikeParams, duration: number) {
+  private spikeScenarios(params: SpikeParams, duration: number, avgResponseSec: number) {
     const stages: { duration: string; target: number }[] = [];
     const spikeEnd = params.spike_start + params.spike_duration;
 
@@ -264,14 +268,14 @@ export class K6Exporter implements LoadTestExporter {
         executor: 'ramping-arrival-rate',
         startRate: params.base_rps,
         timeUnit: '1s',
-        preAllocatedVUs: Math.max(1, Math.ceil(params.base_rps * 0.1)),
-        maxVUs: Math.max(10, Math.ceil(params.spike_rps * 0.5)),
+        preAllocatedVUs: rpsToVUs(params.base_rps, avgResponseSec),
+        maxVUs: Math.max(10, Math.ceil(rpsToVUs(params.spike_rps, avgResponseSec) * 1.5)),
         stages,
       },
     }];
   }
 
-  private waveScenarios(params: WaveParams, duration: number) {
+  private waveScenarios(params: WaveParams, duration: number, avgResponseSec: number) {
     const stepsPerPeriod = 12;
     const periods = Math.max(1, Math.floor(duration / params.period));
     const totalSteps = periods * stepsPerPeriod;
@@ -291,19 +295,20 @@ export class K6Exporter implements LoadTestExporter {
         executor: 'ramping-arrival-rate',
         startRate: params.base_rps,
         timeUnit: '1s',
-        preAllocatedVUs: Math.max(1, Math.ceil(params.base_rps * 0.1)),
-        maxVUs: Math.max(10, Math.ceil(peakRps * 0.5)),
+        preAllocatedVUs: rpsToVUs(params.base_rps, avgResponseSec),
+        maxVUs: Math.max(10, Math.ceil(rpsToVUs(peakRps, avgResponseSec) * 1.5)),
         stages,
       },
     }];
   }
 
-  private stepScenarios(params: StepParams) {
+  private stepScenarios(params: StepParams, avgResponseSec: number) {
     const scenarios: { name: string; config: Record<string, unknown> }[] = [];
     let startTime = 0;
 
     for (let i = 0; i < params.steps.length; i++) {
       const step = params.steps[i];
+      const vus = rpsToVUs(step.rps, avgResponseSec);
       scenarios.push({
         name: `step_${i + 1}`,
         config: {
@@ -311,8 +316,8 @@ export class K6Exporter implements LoadTestExporter {
           rate: step.rps,
           timeUnit: '1s',
           duration: `${step.duration}s`,
-          preAllocatedVUs: Math.max(1, Math.ceil(step.rps * 0.1)),
-          maxVUs: Math.max(10, Math.ceil(step.rps * 0.5)),
+          preAllocatedVUs: vus,
+          maxVUs: Math.max(10, Math.ceil(vus * 1.5)),
           startTime: `${startTime}s`,
         },
       });
@@ -322,13 +327,13 @@ export class K6Exporter implements LoadTestExporter {
     return scenarios;
   }
 
-  private customScenarios(params: CustomParams, duration: number) {
+  private customScenarios(params: CustomParams, duration: number, avgResponseSec: number) {
     const series = params.series;
     if (!series || series.length === 0) {
-      return this.steadyScenarios({ rps: 100 }, duration);
+      return this.steadyScenarios({ rps: 100 }, duration, avgResponseSec);
     }
     if (series.length === 1) {
-      return this.steadyScenarios({ rps: series[0].rps }, duration);
+      return this.steadyScenarios({ rps: series[0].rps }, duration, avgResponseSec);
     }
 
     const stages: { duration: string; target: number }[] = [];
@@ -349,8 +354,8 @@ export class K6Exporter implements LoadTestExporter {
         executor: 'ramping-arrival-rate',
         startRate: Math.max(1, Math.round(series[0].rps)),
         timeUnit: '1s',
-        preAllocatedVUs: Math.max(1, Math.ceil(series[0].rps * 0.1)),
-        maxVUs: Math.max(10, Math.ceil(peakRps * 0.5)),
+        preAllocatedVUs: rpsToVUs(series[0].rps, avgResponseSec),
+        maxVUs: Math.max(10, Math.ceil(rpsToVUs(peakRps, avgResponseSec) * 1.5)),
         stages,
       },
     }];
@@ -377,20 +382,6 @@ export class K6Exporter implements LoadTestExporter {
     }
 
     return thresholds;
-  }
-
-  private estimatePeakRps(config: SimulationConfig): number {
-    const p = config.producer.traffic.params;
-    switch (config.producer.traffic.pattern) {
-      case 'steady': return (p as SteadyParams).rps;
-      case 'gradual': return Math.max((p as GradualParams).start_rps, (p as GradualParams).end_rps);
-      case 'spike': return (p as SpikeParams).spike_rps;
-      case 'wave': return (p as WaveParams).base_rps + (p as WaveParams).amplitude;
-      case 'step': return Math.max(...(p as StepParams).steps.map(s => s.rps), 0);
-      case 'custom':
-      case 'grafana': return Math.max(...((p as CustomParams).series || []).map(s => s.rps), 0);
-      default: return 0;
-    }
   }
 
   private formatValue(value: unknown): string {
