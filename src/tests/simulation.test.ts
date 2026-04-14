@@ -297,6 +297,49 @@ describe('SimulationService — startup time', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Proportional scaling (HPA-style)
+// ---------------------------------------------------------------------------
+describe('SimulationService — proportional scaling', () => {
+  it('scales proportionally to traffic instead of racing to max_replicas', async () => {
+    // With additive step-based scaling, the autoscaler would blindly add
+    // scale_up_step pods every tick until hitting max_replicas.
+    // Proportional scaling calculates the desired count and stops when
+    // enough pods (including starting ones) are in the pipeline.
+    const config = makeConfig({
+      simulation: { duration: 30, tick_interval: 1 },
+      service: { ...SVC, min_replicas: 1, max_replicas: 50, capacity_per_replica: 100, startup_time: 0, scale_up_step: 10, metric_observation_delay: 0, cooldown_scale_up: 0, cooldown_scale_down: 9999, node_provisioning_time: 0 },
+      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams } },
+    });
+    const result = await svc.run(config);
+    // 500 RPS / 100 cap per pod = 5 pods at 100%. At 80% threshold: ~7 pods.
+    // Should NOT overshoot to max_replicas (50) even with step=10 and cooldown=0.
+    assert.ok(
+      result.summary.peak_pod_count <= 8,
+      `peak pods (${result.summary.peak_pod_count}) should be proportional to traffic, not overshoot to max (50)`
+    );
+  });
+
+  it('counts starting pods toward desired total', async () => {
+    // When pods are starting, they should count toward the desired replica count.
+    // The autoscaler should not keep adding more pods just because utilization
+    // is still high (the starting pods haven't contributed capacity yet).
+    const config = makeConfig({
+      simulation: { duration: 30, tick_interval: 1 },
+      service: { ...SVC, min_replicas: 1, max_replicas: 50, capacity_per_replica: 100, startup_time: 10, scale_up_step: 20, metric_observation_delay: 0, cooldown_scale_up: 0, cooldown_scale_down: 9999, node_provisioning_time: 0 },
+      producer: { ...DEFAULT_PRODUCER, traffic: { pattern: 'steady', params: { rps: 500 } as SteadyParams } },
+    });
+    const result = await svc.run(config);
+    // Even with scale_up_step=20 and cooldown=0, proportional scaling should
+    // calculate ~7 desired pods and stop — the startingPods guard provides
+    // additional safety but the proportional formula is the primary mechanism.
+    assert.ok(
+      result.summary.peak_pod_count <= 10,
+      `peak pods (${result.summary.peak_pod_count}) should reflect proportional need, not additive step accumulation`
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Cost estimation
 // ---------------------------------------------------------------------------
 describe('SimulationService — cost', () => {

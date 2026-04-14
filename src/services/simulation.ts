@@ -201,15 +201,28 @@ export class LocalSimulationService implements SimulationService {
       let scaleEvent: 'up' | 'down' | null = null;
 
       // Scale up check
-      // Skip scale-up while pods are still starting — real autoscalers (K8s HPA,
-      // AWS ASG, GCP MIG) include pending pods in the desired count, so they
-      // won't keep adding more pods when a batch is already booting up.
+      // K8s HPA-style proportional scaling: calculate desired replica count
+      // desiredReplicas = ceil(currentReplicas × observedUtilization / targetUtilization)
+      // Starting pods count toward allPodsCount so they satisfy the desired total
+      // without triggering additional scale-ups. scale_up_step caps per-event additions.
       const scaleUpThresholdFraction = service.scale_up_threshold / 100;
-      if (delayedUtilization > scaleUpThresholdFraction
+
+      let desiredReplicas = allPodsCount;
+      if (delayedUtilization > scaleUpThresholdFraction) {
+        if (servingPods > 0 && isFinite(delayedUtilization)) {
+          desiredReplicas = Math.ceil(servingPods * delayedUtilization / scaleUpThresholdFraction);
+        } else {
+          // No serving capacity but traffic exists — fall back to step-based scaling
+          desiredReplicas = allPodsCount + service.scale_up_step;
+        }
+      }
+      const podsNeeded = Math.max(0, Math.min(desiredReplicas, service.max_replicas) - allPodsCount);
+
+      if (podsNeeded > 0
         && (time - lastScaleUpTime) >= service.cooldown_scale_up
         && allPodsCount < service.max_replicas
         && startingPods.length === 0) {
-        const podsToAdd = Math.min(service.scale_up_step, service.max_replicas - allPodsCount);
+        const podsToAdd = Math.min(podsNeeded, service.scale_up_step, service.max_replicas - allPodsCount);
         let needsNewNode = false;
         for (let i = 0; i < podsToAdd; i++) {
           // Check if we need node provisioning (new node when pods exceed current node capacity)
@@ -237,11 +250,11 @@ export class LocalSimulationService implements SimulationService {
         logEntries.push(msg);
       } else if (delayedUtilization > scaleUpThresholdFraction && allPodsCount >= service.max_replicas) {
         logEntries.push(`At max replicas (${service.max_replicas}), cannot scale up despite ${(delayedUtilization * 100).toFixed(0)}% utilization`);
-      } else if (delayedUtilization > scaleUpThresholdFraction
+      } else if (podsNeeded > 0
         && startingPods.length > 0
         && allPodsCount < service.max_replicas) {
         logEntries.push(`Scale-up deferred: ${startingPods.length} pod${startingPods.length > 1 ? 's' : ''} still starting`);
-      } else if (delayedUtilization > scaleUpThresholdFraction
+      } else if (podsNeeded > 0
         && (time - lastScaleUpTime) < service.cooldown_scale_up) {
         const remaining = service.cooldown_scale_up - (time - lastScaleUpTime);
         logEntries.push(`Scale-up needed but cooldown active (${remaining}s remaining)`);
