@@ -230,7 +230,7 @@ All inputs are validated before the simulation runs. Errors are returned as clea
 
 | Constraint | Limit |
 |------------|-------|
-| `simulation.duration` | (0, 3600] seconds (1 hour cap for serverless safety) |
+| `simulation.duration` | [1, 3600] seconds (1 hour cap for serverless safety) |
 | `simulation.tick_interval` | [0.5, duration] seconds |
 | `service.max_replicas` | [1, 1000] |
 | `service.min_replicas` | ≤ `max_replicas` |

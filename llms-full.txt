@@ -209,8 +209,8 @@ https://scalings.xyz/#config=eyJ2ZXJzaW9uIjoyLCJuYW1lIjoiU2ludXNvaWRhbCBXYXZlIFR
 
 | Parameter | Description | Type | Default | Valid Range |
 |-----------|-------------|------|---------|-------------|
-| `duration` | Total simulation length in seconds. | number | 600 | > 0 |
-| `tick_interval` | Seconds per simulation tick. Each tick processes traffic generation, scaling decisions, overflow resolution, and state updates. | number | 1 | > 0 |
+| `duration` | Total simulation length in seconds. | number | 600 | [1, 3600] |
+| `tick_interval` | Seconds per simulation tick. Each tick processes traffic generation, scaling decisions, overflow resolution, and state updates. | number | 1 | [0.5, duration] |
 
 ## Traffic Patterns
 

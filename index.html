@@ -107,7 +107,7 @@
         <h2 class="section-heading">Basic Parameters</h2>
         <div class="param-row">
           <label for="param-min_replicas" title="Minimum number of pods/instances"><span class="pod-label">Pod</span> Min Replicas</label>
-          <input type="number" id="param-min_replicas" min="1" max="100" value="2" aria-label="Minimum replicas value" title="Floor for scale-down">
+          <input type="number" id="param-min_replicas" min="1" max="100" value="1" aria-label="Minimum replicas value" title="Floor for scale-down">
           <span class="unit"></span>
           <button class="tooltip-btn" data-tooltip="Minimum number of pods/instances. The autoscaler will never scale below this number.">?</button>
         </div>
@@ -119,7 +119,7 @@
         </div>
         <div class="param-row">
           <label for="param-scale_up_threshold" title="Utilization threshold to trigger scale-up">Scale-Up Threshold</label>
-          <input type="number" id="param-scale_up_threshold" min="1" max="100" value="70" aria-label="Scale-up threshold value" title="Capacity utilization % that triggers scale-up">
+          <input type="number" id="param-scale_up_threshold" min="1" max="100" value="80" aria-label="Scale-up threshold value" title="Capacity utilization % that triggers scale-up">
           <span class="unit">%</span>
           <button class="tooltip-btn" data-tooltip="When capacity utilization exceeds this percentage, the autoscaler triggers a scale-up event.">?</button>
         </div>
@@ -349,14 +349,14 @@
 
             <div class="param-row">
               <label for="param-cooldown_scale_up" title="Cooldown after scale-up">Cooldown (Scale-Up)</label>
-              <input type="number" id="param-cooldown_scale_up" min="0" max="600" value="60" aria-label="Scale-up cooldown value" title="Seconds after a scale-up before another is allowed">
+              <input type="number" id="param-cooldown_scale_up" min="0" max="600" value="15" aria-label="Scale-up cooldown value" title="Seconds after a scale-up before another is allowed">
               <span class="unit">s</span>
               <button class="tooltip-btn" data-tooltip="Seconds after a scale-up event before another scale-up is allowed. Prevents thrashing.">?</button>
             </div>
 
             <div class="param-row">
               <label for="param-cooldown_scale_down" title="Cooldown after scale-down">Cooldown (Scale-Down)</label>
-              <input type="number" id="param-cooldown_scale_down" min="0" max="600" value="300" aria-label="Scale-down cooldown value" title="Seconds after a scale-down before another is allowed">
+              <input type="number" id="param-cooldown_scale_down" min="0" max="600" value="60" aria-label="Scale-down cooldown value" title="Seconds after a scale-down before another is allowed">
               <span class="unit">s</span>
               <button class="tooltip-btn" data-tooltip="Seconds after a scale-down event before another scale-down is allowed. Usually longer than scale-up cooldown.">?</button>
             </div>
@@ -384,14 +384,14 @@
 
             <div class="param-row">
               <label for="param-graceful_shutdown_time" title="Time a terminating pod keeps serving">Graceful Shutdown Time</label>
-              <input type="number" id="param-graceful_shutdown_time" min="0" max="120" value="10" aria-label="Graceful shutdown time value" title="Seconds a terminating pod continues serving during scale-down">
+              <input type="number" id="param-graceful_shutdown_time" min="0" max="120" value="30" aria-label="Graceful shutdown time value" title="Seconds a terminating pod continues serving during scale-down">
               <span class="unit">s</span>
               <button class="tooltip-btn" data-tooltip="Seconds a terminating pod continues serving traffic during scale-down before fully stopping.">?</button>
             </div>
 
             <div class="param-row">
               <label for="param-scale_up_step" title="Pods to add per scale-up event">Scale-Up Step Size</label>
-              <input type="number" id="param-scale_up_step" min="1" max="50" value="1" aria-label="Scale-up step value" title="Number of pods to add per scale-up event">
+              <input type="number" id="param-scale_up_step" min="1" max="50" value="4" aria-label="Scale-up step value" title="Number of pods to add per scale-up event">
               <span class="unit"></span>
               <button class="tooltip-btn" data-tooltip="Number of pods to add per scale-up event. Higher values scale faster but may overshoot.">?</button>
             </div>

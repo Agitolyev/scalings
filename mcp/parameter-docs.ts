@@ -41,12 +41,12 @@ const SIMULATION_PARAMS: ParameterDoc[] = [
     description: 'Granularity of each simulation step. Smaller = more detail, more snapshots.',
     unit: 'seconds',
     min: 0.5,
-    max: 60,
+    max: 3600,
   },
 ];
 
 const SERVICE_PARAMS: ParameterDoc[] = [
-  { name: 'min_replicas', path: 'service.min_replicas', type: 'integer', default: DEFAULT_SERVICE.min_replicas, description: 'Minimum number of pods the autoscaler will keep running.', min: 0 },
+  { name: 'min_replicas', path: 'service.min_replicas', type: 'integer', default: DEFAULT_SERVICE.min_replicas, description: 'Minimum number of pods the autoscaler will keep running.', min: 1 },
   { name: 'max_replicas', path: 'service.max_replicas', type: 'integer', default: DEFAULT_SERVICE.max_replicas, description: 'Upper bound on pod count — even under overload the autoscaler will not exceed this.', min: 1, max: 1000 },
   { name: 'scale_up_threshold', path: 'service.scale_up_threshold', type: 'number', default: DEFAULT_SERVICE.scale_up_threshold, description: 'Observed capacity utilization (%) above which the autoscaler adds pods.', unit: 'percent', min: 0, max: 100 },
   { name: 'scale_down_threshold', path: 'service.scale_down_threshold', type: 'number', default: DEFAULT_SERVICE.scale_down_threshold, description: 'Observed capacity utilization (%) below which the autoscaler removes pods. Must be < scale_up_threshold.', unit: 'percent', min: 0, max: 100 },
@@ -70,7 +70,7 @@ const SERVICE_PARAMS: ParameterDoc[] = [
 ];
 
 const CLIENT_PARAMS: ParameterDoc[] = [
-  { name: 'max_retries', path: 'client.max_retries', type: 'integer', default: DEFAULT_CLIENT.max_retries, description: 'Maximum retry attempts per failed request. 0 = no retries.', min: 0 },
+  { name: 'max_retries', path: 'client.max_retries', type: 'integer', default: DEFAULT_CLIENT.max_retries, description: 'Maximum retry attempts per failed request. 0 = no retries.', min: 0, max: 10 },
   { name: 'retry_delay', path: 'client.retry_delay', type: 'number', default: DEFAULT_CLIENT.retry_delay, description: 'Base delay between a failure and its retry. 0 = retry next tick.', unit: 'seconds', min: 0 },
   { name: 'retry_strategy', path: 'client.retry_strategy', type: 'enum', default: DEFAULT_CLIENT.retry_strategy, description: 'How retry delay scales with attempt number.', enum_values: RETRY_STRATEGIES },
 ];
