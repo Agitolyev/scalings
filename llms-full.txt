@@ -1,6 +1,8 @@
 # scalings.xyz
 
-> scalings.xyz is an interactive, fully client-side autoscaling simulator. Engineers configure autoscaling parameters, select a traffic pattern, and run a discrete-time simulation to visualize whether their scaling policy handles the load. AI agents can programmatically construct simulation URLs using the URL Hash API.
+> scalings.xyz is an interactive autoscaling simulator. Engineers configure autoscaling parameters, select a traffic pattern, and run a discrete-time simulation to visualize whether their scaling policy handles the load.
+>
+> AI agents have two integration points: (1) the **URL Hash API**, which encodes a config in a `scalings.xyz/#config=<base64>` link — when a human opens it, the simulation runs entirely in their browser; (2) the **MCP server** at `mcp.scalings.xyz/mcp`, which lets MCP-capable clients (Claude Desktop, Cursor, Claude Code, etc.) actually run simulations programmatically — those calls execute on a Vercel serverless function. The browser UI itself never makes network calls; only the MCP path is server-side, and only when an MCP client invokes it.
 
 ## URL Hash API
 

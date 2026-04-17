@@ -2,9 +2,15 @@
 
 ## Project Overview
 
-Browser-based autoscaling simulator (Kubernetes HPA, AWS ASG, GCP MIG). Pure TypeScript, no frameworks, runs 100% in the browser. All services are composable and testable via dependency injection.
+Autoscaling simulator (Kubernetes HPA, AWS ASG, GCP MIG). Pure TypeScript, no frameworks, no UI dependencies in the simulation engine. All services are composable and testable via dependency injection.
 
-**This app is designed to be usable by LLMs.** The simulation engine has no DOM dependencies — an LLM with code execution can run simulations directly via the service layer without a browser. The web UI should also be semantically clear so LLMs that *can* see/interact with the page can understand it.
+**Two surfaces, one engine**:
+- **Browser UI** at `scalings.xyz` — runs 100% client-side. No backend, no API calls, no telemetry. Configs share via URL hash.
+- **MCP server** at `mcp.scalings.xyz/mcp` — for AI tools (Claude Desktop, Cursor, Claude Code, etc.). Streamable HTTP, stateless, no auth. Tool calls execute on a Vercel serverless function (`api/mcp.ts`) — the only server-side execution path.
+
+Both surfaces import `LocalSimulationService` from `src/services/`; the engine has zero DOM dependencies, so it works identically in either context.
+
+**This app is designed to be usable by LLMs.** An LLM with code execution can run simulations via the service layer; an LLM with MCP tooling can call `mcp.scalings.xyz`; an LLM that can see/interact with the page can use the UI directly.
 
 ### How an LLM can run a simulation (no browser needed)
 

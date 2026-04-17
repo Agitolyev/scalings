@@ -2,7 +2,9 @@
 
 ## What is scalings.xyz?
 
-scalings.xyz is an interactive, fully client-side autoscaling simulator. It lets engineers configure autoscaling parameters, select a traffic pattern, and run a discrete-time simulation to visualize whether their scaling policy can handle the load. Once you've found a config that works, export deployment manifests for your platform and load test scripts to validate against real infrastructure.
+scalings.xyz is an interactive autoscaling simulator. It lets engineers configure autoscaling parameters, select a traffic pattern, and run a discrete-time simulation to visualize whether their scaling policy can handle the load. Once you've found a config that works, export deployment manifests for your platform and load test scripts to validate against real infrastructure.
+
+**Architecture**: the browser UI runs 100% client-side — no backend, no API calls, no telemetry. The optional [MCP server](#mcp-server) at `mcp.scalings.xyz` is the only exception: when AI tools (Claude Desktop, Cursor, Claude Code) call simulation tools, those calls execute on a Vercel serverless function. Both surfaces use the same underlying engine; neither stores user data.
 
 ## When to use it
 
@@ -206,7 +208,7 @@ AI agents and scripts can construct these URLs programmatically to link users di
 
 ## MCP Server
 
-scalings.xyz exposes an MCP (Model Context Protocol) server so AI coding tools can run simulations programmatically — not just read docs. The server is stateless, requires no authentication, and runs on Vercel as a serverless function.
+scalings.xyz exposes an MCP (Model Context Protocol) server so AI coding tools can run simulations programmatically — not just read docs. **Unlike the browser UI (which runs client-side in your tab), MCP tool calls execute on a Vercel serverless function** — same simulation engine, just headless. Stateless, no authentication, no user data stored.
 
 - **Endpoint**: `https://mcp.scalings.xyz/mcp`
 - **Transport**: Streamable HTTP (no SSE, no stdio in production)
