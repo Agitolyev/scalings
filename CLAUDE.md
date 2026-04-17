@@ -69,9 +69,20 @@ src/
   services/              # Business logic (simulation, config, traffic, export)
   ui/                    # DOM controllers (controls, chart, main)
   factory.ts             # DI container — wires implementations to interfaces
+mcp/
+  server.ts              # MCP server setup — registers 5 tools on an McpServer
+  validation.ts          # mergeWithDefaults + validateSimulationConfig
+  parameter-docs.ts      # Structured parameter metadata for describe_parameters
+  tools/                 # One file per tool — imports LocalSimulationService etc.
+  tests/                 # node:test suite for tool handlers + validation + integration
+  tsconfig.json          # Separate build → dist-mcp/ (site build stays in dist/)
+api/
+  mcp.ts                 # Vercel serverless entry — wraps mcp/server.ts with mcp-handler
 ```
 
 **Dependency direction**: `ui/ → factory → services/ → interfaces/`. Never import UI from services.
+
+**MCP server**: `api/mcp.ts → mcp/server.ts → mcp/tools/* → src/services/* → src/interfaces/types.ts`. The MCP layer never duplicates simulation logic — it imports `LocalSimulationService`, `LocalTrafficPatternService`, and `LocalConfigService` directly. Deployed on Vercel at `mcp.scalings.xyz` via a host-scoped rewrite in `vercel.json`.
 
 **Service interfaces** are defined in `types.ts`. Implementations are in `services/`. The factory wires them — swap an implementation there, nothing else changes.
 
