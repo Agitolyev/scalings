@@ -32,9 +32,11 @@ const VALID_PLATFORMS: readonly Platform[] = ['kubernetes-hpa', 'aws-asg', 'gcp-
 const VALID_PATTERNS: readonly TrafficPatternType[] = ['steady', 'gradual', 'spike', 'wave', 'step', 'custom', 'grafana'];
 const VALID_RETRY_STRATEGIES: readonly RetryStrategy[] = ['fixed', 'exponential', 'exponential-jitter'];
 
+const MIN_DURATION = 1;
 const MAX_DURATION = 3600;
 const MIN_TICK_INTERVAL = 0.5;
 const MAX_REPLICAS_CAP = 1000;
+const MAX_RETRIES_CAP = 10;
 
 // ---------------------------------------------------------------------------
 // Deep merge: partial → full SimulationConfig using DEFAULT_CONFIG.
@@ -98,8 +100,8 @@ function validatePlatform(config: SimulationConfig, errors: ValidationError[]): 
 
 function validateSimulation(config: SimulationConfig, errors: ValidationError[]): void {
   const sim = config.simulation;
-  if (!isFiniteNumber(sim.duration) || sim.duration <= 0) {
-    errors.push({ field: 'simulation.duration', message: 'Must be a positive, finite number.', value: sim.duration });
+  if (!isFiniteNumber(sim.duration) || sim.duration < MIN_DURATION) {
+    errors.push({ field: 'simulation.duration', message: `Must be a finite number >= ${MIN_DURATION}s.`, value: sim.duration });
   } else if (sim.duration > MAX_DURATION) {
     errors.push({ field: 'simulation.duration', message: `Must be <= ${MAX_DURATION}s (serverless safety cap).`, value: sim.duration });
   }
@@ -115,7 +117,7 @@ function validateSimulation(config: SimulationConfig, errors: ValidationError[])
 function validateService(config: SimulationConfig, errors: ValidationError[]): void {
   const s = config.service;
   const numericFields: Array<{ key: keyof typeof s; nonNegative: boolean; min?: number; max?: number }> = [
-    { key: 'min_replicas', nonNegative: true },
+    { key: 'min_replicas', nonNegative: true, min: 1 },
     { key: 'max_replicas', nonNegative: true, min: 1, max: MAX_REPLICAS_CAP },
     { key: 'scale_up_threshold', nonNegative: true, min: 0, max: 100 },
     { key: 'scale_down_threshold', nonNegative: true, min: 0, max: 100 },
@@ -195,6 +197,8 @@ function validateClient(config: SimulationConfig, errors: ValidationError[]): vo
   const c = config.client;
   if (!isFiniteNumber(c.max_retries) || c.max_retries < 0) {
     errors.push({ field: 'client.max_retries', message: 'Must be a non-negative finite number.', value: c.max_retries });
+  } else if (c.max_retries > MAX_RETRIES_CAP) {
+    errors.push({ field: 'client.max_retries', message: `Must be <= ${MAX_RETRIES_CAP}.`, value: c.max_retries });
   }
   if (!isFiniteNumber(c.retry_delay) || c.retry_delay < 0) {
     errors.push({ field: 'client.retry_delay', message: 'Must be a non-negative finite number.', value: c.retry_delay });

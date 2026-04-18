@@ -230,7 +230,7 @@ All inputs are validated before the simulation runs. Errors are returned as clea
 
 | Constraint | Limit |
 |------------|-------|
-| `simulation.duration` | (0, 3600] seconds (1 hour cap for serverless safety) |
+| `simulation.duration` | [1, 3600] seconds (1 hour cap for serverless safety) |
 | `simulation.tick_interval` | [0.5, duration] seconds |
 | `service.max_replicas` | [1, 1000] |
 | `service.min_replicas` | ≤ `max_replicas` |
@@ -268,7 +268,7 @@ All inputs are validated before the simulation runs. Errors are returned as clea
 **Claude Code** — register via CLI:
 
 ```bash
-claude mcp add scalings --url https://mcp.scalings.xyz/mcp
+claude mcp add --transport http scalings https://mcp.scalings.xyz/mcp
 ```
 
 **Generic MCP client** — any client that speaks Streamable HTTP can connect to `https://mcp.scalings.xyz/mcp`.
