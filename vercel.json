@@ -15,15 +15,8 @@
       "source": "/:path*",
       "has": [{ "type": "host", "value": "www.scalings.xyz" }],
       "destination": "https://scalings.xyz/:path*",
-      "permanent": true
+      "permanent": false
     }
-  ],
-  "routes": [
-    { "src": "/llms.txt", "dest": "/llms.txt" },
-    { "src": "/llms-full.txt", "dest": "/llms-full.txt" },
-    { "src": "/docs.md", "dest": "/docs.md" },
-    { "src": "/robots.txt", "dest": "/robots.txt" },
-    { "src": "/sitemap.xml", "dest": "/sitemap.xml" }
   ],
   "headers": [
     {
